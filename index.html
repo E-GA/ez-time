@@ -188,7 +188,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
        // *** วาง URL ของคุณตรงนี้ ***
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyAjA7WUEQ3CH-l5MP4ZkHVS6uY0Hq70E7QBJPj7wC5anplaI7XMpahP9HHwE9xjr2x/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYqQe9Ev227ki0Pocio-z-X4vaM37NPI55HipVqdSGmNXuqI2Ix7jQawcEMEG8Cgsn/exec";
        
         let employees = [];
         let workLogs = [];
@@ -214,28 +214,21 @@
         }
 
 async function syncData(sheetName, dataArray) {
-            showLoading(true);
-   try {
-                // แก้ไข: นำ mode: "no-cors" ออก เพื่อให้ได้รับ Response กลับมา
-                const response = await fetch(SCRIPT_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ 
-                        action: 'syncAll', // ระบุ action ให้ชัดเจน
-                        sheet: sheetName, 
-                        data: dataArray 
-                    })
-                });
-                
-                // ตรวจสอบว่าสำเร็จหรือไม่
-                if (response.ok) {
-                    console.log("บันทึกข้อมูลเรียบร้อย");
-                }
-            } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการบันทึก:", error);
-            }
-            // ปิดตัวโหลดทันทีที่ทำงานเสร็จ
-            showLoading(false); 
-        }
+    try {
+        await fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({
+                sheet: sheetName,
+                data: dataArray
+            })
+        });
+
+        console.log("sync:", sheetName);
+    } catch (error) {
+        console.error("บันทึกไม่สำเร็จ:", error);
+    }
+}
         function login() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
@@ -256,18 +249,15 @@ async function syncData(sheetName, dataArray) {
 
         function logout() { location.reload(); }
 
-  async function saveData() {
+async function saveData() {
     localStorage.setItem('ez_v4_emp', JSON.stringify(employees));
     localStorage.setItem('ez_v4_logs', JSON.stringify(workLogs));
     localStorage.setItem('ez_v4_plans', JSON.stringify(workPlans));
 
-    await Promise.all([
-        syncData("employees", employees),
-        syncData("workLogs", workLogs),
-        syncData("workPlans", workPlans)
-    ]);
+    await syncData("employees", employees);
+    await syncData("workLogs", workLogs);
+    await syncData("workPlans", workPlans);
 }
-
         // --- User: Actions ---
         function uploadPhoto(input) {
             if (input.files && input.files[0]) {
