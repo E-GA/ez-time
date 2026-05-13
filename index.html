@@ -186,34 +186,68 @@
     </div></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-       // *** วาง URL ของคุณตรงนี้ ***
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYqQe9Ev227ki0Pocio-z-X4vaM37NPI55HipVqdSGmNXuqI2Ix7jQawcEMEG8Cgsn/exec";
-       
-        let employees = [];
-        let workLogs = [];
-        let workPlans = [];
-        let currentUser = null;
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYqQe9Ev227ki0Pocio-z-X4vaM37NPI55HipVqdSGmNXuqI2Ix7jQawcEMEG8Cgsn/exec";
 
-        window.onload = fetchAllData;
+let employees = [];
+let workLogs = [];
+let workPlans = [];
+let currentUser = null;
+let workModal = null;
 
-        async function fetchAllData() {
-            showLoading(true);
-            try {
-                const [eRes, lRes, pRes] = await Promise.all([
-                    fetch(SCRIPT_URL + "?action=getEmployees"),
-                    fetch(SCRIPT_URL + "?action=getLogs"),
-                    fetch(SCRIPT_URL + "?action=getPlans")
-                ]);
-                employees = await eRes.json();
-                workLogs = await lRes.json();
-                workPlans = await pRes.json();
-                renderPublicPlans();
-            } catch (err) { console.error(err); }
-            showLoading(false);
-        }
+window.onload = async function () {
+    workModal = new bootstrap.Modal(document.getElementById('editWorkModal'));
+    await fetchAllData();
+};
+
+function showLoading(status) {
+    console.log(status ? "กำลังโหลด..." : "โหลดเสร็จ");
+}
+
+async function fetchAllData() {
+    showLoading(true);
+    try {
+        const [eRes, lRes, pRes] = await Promise.all([
+            fetch(SCRIPT_URL + "?action=getEmployees"),
+            fetch(SCRIPT_URL + "?action=getLogs"),
+            fetch(SCRIPT_URL + "?action=getPlans")
+        ]);
+
+        employees = await eRes.json();
+        workLogs = await lRes.json();
+        workPlans = await pRes.json();
+
+        employees = employees.map(e => ({
+            ...e,
+            id: Number(e.id)
+        }));
+
+        workLogs = workLogs.map(l => ({
+            ...l,
+            id: Number(l.id),
+            empId: Number(l.empId),
+            rate: Number(l.rate || 0),
+            fund: Number(l.fund || 0),
+            hours: Number(l.hours || 0),
+            total: Number(l.total || 0)
+        }));
+
+        workPlans = workPlans.map(p => ({
+            ...p,
+            id: Number(p.id)
+        }));
+
+        renderPublicPlans();
+    } catch (err) {
+        console.error("โหลดข้อมูลไม่สำเร็จ:", err);
+        alert("โหลดข้อมูลจาก Google Sheet ไม่สำเร็จ");
+    }
+    showLoading(false);
+}
 
 async function syncData(sheetName, dataArray) {
+    if (!Array.isArray(dataArray)) return;
+
     try {
         await fetch(SCRIPT_URL, {
             method: "POST",
@@ -224,219 +258,396 @@ async function syncData(sheetName, dataArray) {
             })
         });
 
-        console.log("sync:", sheetName);
+        console.log("บันทึกลง Google Sheet:", sheetName);
     } catch (error) {
         console.error("บันทึกไม่สำเร็จ:", error);
+        alert("บันทึกข้อมูลไม่สำเร็จ");
     }
 }
-        function login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            if(u === 'admin' && p === '1234') { 
-                showPage('adminPage'); updateAdminUI(); renderAdminDashboard(); renderAdminPlans(); 
-            } else {
-                const found = employees.find(e => e.username === u && (e.password || '1234') === p);
-                if(found) { currentUser = found; showPage('userPage'); renderUserDashboard(); } 
-                else alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-            }
-        }
 
-        function showPage(id) {
-            document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-            document.getElementById('mainNav').classList.remove('hidden');
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        function logout() { location.reload(); }
-
-async function saveData() {
+async function saveData(sheetName) {
     localStorage.setItem('ez_v4_emp', JSON.stringify(employees));
     localStorage.setItem('ez_v4_logs', JSON.stringify(workLogs));
     localStorage.setItem('ez_v4_plans', JSON.stringify(workPlans));
 
-    await syncData("employees", employees);
-    await syncData("workLogs", workLogs);
-    await syncData("workPlans", workPlans);
+    if (sheetName === "employees") await syncData("employees", employees);
+    if (sheetName === "workLogs") await syncData("workLogs", workLogs);
+    if (sheetName === "workPlans") await syncData("workPlans", workPlans);
 }
-        // --- User: Actions ---
-        function uploadPhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imgData = e.target.result;
-                    document.getElementById('uProfileImg').src = imgData;
-                    currentUser.photo = imgData;
-                    const idx = employees.findIndex(emp => emp.id === currentUser.id);
-                    if(idx !== -1) employees[idx].photo = imgData;
-                    saveData();
-alert("อัปเดตรูปเรียบร้อย");
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
 
-        function updateUserAccount() {
-            const newBank = document.getElementById('uInputBank').value;
-            const newAcc = document.getElementById('uInputAcc').value;
-            if(!newBank || !newAcc) return alert('กรุณาระบุธนาคารและเลขบัญชี');
-            
-            currentUser.bank = newBank;
-            currentUser.acc = newAcc;
-            const idx = employees.findIndex(e => e.id === currentUser.id);
-            if(idx !== -1) {
-                employees[idx].bank = newBank;
-                employees[idx].acc = newAcc;
-            }
-            saveData();
-            alert('บันทึกข้อมูลบัญชีสำเร็จ');
-            if(document.getElementById('adminPage').className === '') updateAdminUI(); 
-        }
+function login() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value.trim();
 
-        function changePasswordUser() {
-            const oldP = prompt("ระบุรหัสผ่านปัจจุบัน:");
-            if(!oldP) return;
-            if(oldP !== (currentUser.password || '1234')) return alert("รหัสผ่านปัจจุบันไม่ถูกต้อง");
-            const newP = prompt("ระบุรหัสผ่านใหม่ (4 ตัวขึ้นไป):");
-            if(newP && newP.length >= 4) {
-                currentUser.password = newP;
-                const idx = employees.findIndex(e => e.id === currentUser.id);
-                if(idx !== -1) employees[idx].password = newP;
-                saveData(); alert("เปลี่ยนรหัสผ่านสำเร็จ!");
-            }
+    if (u === 'admin' && p === '1234') {
+        showPage('adminPage');
+        updateAdminUI();
+        renderAdminDashboard();
+        renderAdminPlans();
+    } else {
+        const found = employees.find(e => e.username === u && String(e.password || '1234') === p);
+        if (found) {
+            currentUser = found;
+            showPage('userPage');
+            renderUserDashboard();
+        } else {
+            alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
         }
+    }
+}
 
-        // --- Admin: UI ---
-        function updateAdminUI() {
-            const select = document.getElementById('selectEmp');
-            select.innerHTML = '<option value="">-- เลือกพนักงาน --</option>';
-            employees.forEach(e => select.innerHTML += `<option value="${e.id}">${e.name}</option>`);
-            
-            const empList = document.getElementById('adminEmpList'); 
-            empList.innerHTML = '<h6 class="fw-bold border-bottom pb-2">รายชื่อพนักงาน</h6>';
-            employees.forEach(e => {
-                empList.innerHTML += `<div class="mb-2 p-2 border rounded bg-white shadow-sm d-flex justify-content-between align-items-center">
-                    <div>
-                        <b>${e.name}</b><br>
-                        <small class="text-muted">User: ${e.username}</small><br>
-                        <small class="text-primary">${e.bank || '-'} ${e.acc}</small>
-                    </div>
-                    <div>
-                        <i class="bi bi-pencil-square me-2" style="cursor:pointer" onclick="editEmployeeAdmin(${e.id})"></i>
-                        <i class="bi bi-trash text-danger" style="cursor:pointer" onclick="deleteEmployee(${e.id})"></i>
-                    </div>
-                </div>`;
-            });
-        }
+function showPage(id) {
+    document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+    document.getElementById('mainNav').classList.remove('hidden');
+    document.getElementById(id).classList.remove('hidden');
+}
 
-        function editEmployeeAdmin(id) {
-            const emp = employees.find(e => e.id === id);
-            const n = prompt("ชื่อ-นามสกุล:", emp.name);
-            const b = prompt("ธนาคาร:", emp.bank || "");
-            const a = prompt("เลขบัญชี:", emp.acc);
-            const u = prompt("Username ล็อกอิน:", emp.username);
-            const p = prompt("รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน):", "");
+function logout() {
+    location.reload();
+}
 
-            if(n) emp.name = n;
-            if(b) emp.bank = b;
-            if(a) emp.acc = a;
-            if(u) emp.username = u;
-            if(p) emp.password = p;
+function uploadPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const imgData = e.target.result;
+            document.getElementById('uProfileImg').src = imgData;
 
-            saveData(); updateAdminUI(); renderAdminDashboard();
-        }
+            currentUser.photo = imgData;
+            const idx = employees.findIndex(emp => emp.id === currentUser.id);
+            if (idx !== -1) employees[idx].photo = imgData;
 
-        function renderAdminDashboard() {
-            const tbody = document.getElementById('adminReportBody'); tbody.innerHTML = '';
-            [...workLogs].reverse().forEach(log => {
-                const emp = employees.find(e => e.id === log.empId) || {name: 'N/A', bank: '-', acc: '-'};
-                tbody.innerHTML += `<tr>
-                    <td><small>${log.date}</small><br><b>${emp.name}</b></td>
-                    <td><span class="badge bg-light text-dark border">${emp.bank}</span><br><span class="text-primary fw-bold">${emp.acc}</span></td>
-                    <td>${log.hours}ชม.</td><td class="fw-bold">${parseFloat(log.total).toLocaleString()}</td>
-                    <td class="${log.status==='paid'?'status-paid':'status-pending'}">${log.status==='paid'?'จ่ายแล้ว':'รอ'}</td>
-                    <td><i class="bi bi-check-circle-fill text-success me-2 fs-5" style="cursor:pointer" onclick="togglePay(${log.id})"></i><i class="bi bi-pencil fs-5" style="cursor:pointer" onclick="openEditWork(${log.id})"></i></td></tr>`;
-            });
-        }
+            await saveData("employees");
+            alert("อัปเดตรูปเรียบร้อย");
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
-        // --- Other Functions ---
-        function renderPublicPlans() {
-            const list = document.getElementById('loginPlanList');
-            list.innerHTML = workPlans.length ? workPlans.map(p => `<div class="mb-2 border-bottom pb-1 small"><i class="bi bi-calendar-event"></i> ${p.text}</div>`).join('') : "ยังไม่มีประกาศ";
-        }
-        function renderAdminPlans() {
-            const list = document.getElementById('adminPlanList');
-            list.innerHTML = workPlans.map(p => `<div class="d-flex justify-content-between mb-2 p-2 border rounded small bg-white"><span>${p.text}</span><i class="bi bi-trash text-danger" onclick="deletePlan(${p.id})"></i></div>`).join('');
-        }
-        function addWorkPlan() {
-            const t = document.getElementById('planText').value; if(!t) return;
-            workPlans.push({ id: Date.now(), text: t }); document.getElementById('planText').value = ''; saveData(); renderAdminPlans(); renderPublicPlans();
-        }
-        function deletePlan(id) { workPlans = workPlans.filter(p => p.id !== id); saveData(); renderAdminPlans(); renderPublicPlans(); }
-        function addEmployee() {
-            const n = document.getElementById('empName').value, b = document.getElementById('empBank').value, a = document.getElementById('empAcc').value;
-            if(!n || !b || !a) return alert('กรอกข้อมูลให้ครบ');
-            const u = 'user' + (employees.length + 1);
-            employees.push({ id: Date.now(), username: u, password: '1234', name: n, bank: b, acc: a, photo: '' });
-            saveData(); updateAdminUI(); alert('เพิ่มพนักงานสำเร็จ User คือ: ' + u);
-        }
-        function deleteEmployee(id) { if(confirm('ลบพนักงาน?')) { employees = employees.filter(e => e.id !== id); saveData(); updateAdminUI(); } }
-        function addWorkLog() {
-            const eid = document.getElementById('selectEmp').value, d = document.getElementById('workDate').value;
-            const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
-            const r = document.getElementById('entryRate').value, f = document.getElementById('entryFund').value || 0;
-            if(!eid || !d || !s || !e || !r) return alert('ข้อมูลไม่ครบ');
-            let diff = (new Date(`2024-01-01 ${e}`) - new Date(`2024-01-01 ${s}`)) / 3600000;
-            const hrs = diff < 0 ? (diff + 24).toFixed(2) : diff.toFixed(2);
-            workLogs.push({ id: Date.now(), empId: parseInt(eid), date: d, start: s, end: e, rate: parseFloat(r), fund: parseFloat(f), hours: hrs, total: (hrs * r - f).toFixed(2), status: 'pending' });
-            saveData(); renderAdminDashboard(); alert('บันทึกงานสำเร็จ');
-        }
-        function togglePay(id) { const log = workLogs.find(l => l.id === id); log.status = log.status === 'paid' ? 'pending' : 'paid'; saveData(); renderAdminDashboard(); }
-        function openEditWork(id) { const log = workLogs.find(l => l.id === id); document.getElementById('editLogId').value = log.id; document.getElementById('editDate').value = log.date; document.getElementById('editStart').value = log.start; document.getElementById('editEnd').value = log.end; document.getElementById('editRate').value = log.rate; document.getElementById('editFund').value = log.fund; workModal.show(); }
-        function saveEditWork() {
-            const log = workLogs.find(l => l.id === parseInt(document.getElementById('editLogId').value));
-            log.date = document.getElementById('editDate').value; log.start = document.getElementById('editStart').value; log.end = document.getElementById('editEnd').value;
-            log.rate = parseFloat(document.getElementById('editRate').value); log.fund = parseFloat(document.getElementById('editFund').value);
-            let diff = (new Date(`2024-01-01 ${log.end}`) - new Date(`2024-01-01 ${log.start}`)) / 3600000;
-            log.hours = diff < 0 ? (diff + 24).toFixed(2) : diff.toFixed(2);
-            log.total = (log.hours * log.rate - log.fund).toFixed(2);
-            saveData(); renderAdminDashboard(); workModal.hide();
-        }
-        function renderUserDashboard() {
-            document.getElementById('uDisplayName').innerText = currentUser.name;
-            document.getElementById('uInputBank').value = currentUser.bank || "";
-            document.getElementById('uInputAcc').value = currentUser.acc;
-            document.getElementById('uProfileImg').src = currentUser.photo || "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
-            const myLogs = workLogs.filter(l => l.empId === currentUser.id);
-            const accordion = document.getElementById('monthlyAccordion'); accordion.innerHTML = '';
-            let months = {}, tInc = 0, tFun = 0;
-            myLogs.forEach(l => {
-                const m = l.date.substring(0, 7);
-                if(!months[m]) months[m] = { logs: [], inc: 0, fun: 0 };
-                months[m].logs.push(l); months[m].inc += parseFloat(l.total); months[m].fun += parseFloat(l.fund);
-                tInc += parseFloat(l.total); tFun += parseFloat(l.fund);
-            });
-            document.getElementById('uTotalAll').innerText = tInc.toLocaleString() + " ฿";
-            document.getElementById('uTotalFundAll').innerText = tFun.toLocaleString() + " ฿";
-            Object.keys(months).sort().reverse().forEach((m, idx) => {
-                let rows = months[m].logs.map(log => `<tr><td><small>${log.date}</small></td><td>${log.hours}ชม.</td><td>${log.status==='paid'?'✅':'⏳'}</td><td class="fw-bold">${parseFloat(log.total).toLocaleString()}</td></tr>`).join('');
-                accordion.innerHTML += `<div class="accordion-item mb-2 shadow-sm rounded overflow-hidden border-0">
-                    <h2 class="accordion-header"><button class="accordion-button ${idx===0?'':'collapsed'} py-2" type="button" data-bs-toggle="collapse" data-bs-target="#c${m}">
+async function updateUserAccount() {
+    const newBank = document.getElementById('uInputBank').value;
+    const newAcc = document.getElementById('uInputAcc').value;
+
+    if (!newBank || !newAcc) return alert('กรุณาระบุธนาคารและเลขบัญชี');
+
+    currentUser.bank = newBank;
+    currentUser.acc = newAcc;
+
+    const idx = employees.findIndex(e => e.id === currentUser.id);
+    if (idx !== -1) {
+        employees[idx].bank = newBank;
+        employees[idx].acc = newAcc;
+    }
+
+    await saveData("employees");
+    alert('บันทึกข้อมูลบัญชีสำเร็จ');
+}
+
+async function changePasswordUser() {
+    const oldP = prompt("ระบุรหัสผ่านปัจจุบัน:");
+    if (!oldP) return;
+
+    if (oldP !== String(currentUser.password || '1234')) {
+        return alert("รหัสผ่านปัจจุบันไม่ถูกต้อง");
+    }
+
+    const newP = prompt("ระบุรหัสผ่านใหม่ (4 ตัวขึ้นไป):");
+    if (newP && newP.length >= 4) {
+        currentUser.password = newP;
+
+        const idx = employees.findIndex(e => e.id === currentUser.id);
+        if (idx !== -1) employees[idx].password = newP;
+
+        await saveData("employees");
+        alert("เปลี่ยนรหัสผ่านสำเร็จ");
+    }
+}
+
+function updateAdminUI() {
+    const select = document.getElementById('selectEmp');
+    select.innerHTML = '<option value="">-- เลือกพนักงาน --</option>';
+
+    employees.forEach(e => {
+        select.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+    });
+
+    const empList = document.getElementById('adminEmpList');
+    empList.innerHTML = '<h6 class="fw-bold border-bottom pb-2">รายชื่อพนักงาน</h6>';
+
+    employees.forEach(e => {
+        empList.innerHTML += `
+            <div class="mb-2 p-2 border rounded bg-white shadow-sm d-flex justify-content-between align-items-center">
+                <div>
+                    <b>${e.name}</b><br>
+                    <small class="text-muted">User: ${e.username}</small><br>
+                    <small class="text-primary">${e.bank || '-'} ${e.acc || ''}</small>
+                </div>
+                <div>
+                    <i class="bi bi-pencil-square me-2" style="cursor:pointer" onclick="editEmployeeAdmin(${e.id})"></i>
+                    <i class="bi bi-trash text-danger" style="cursor:pointer" onclick="deleteEmployee(${e.id})"></i>
+                </div>
+            </div>`;
+    });
+}
+
+async function editEmployeeAdmin(id) {
+    const emp = employees.find(e => e.id === id);
+    if (!emp) return;
+
+    const n = prompt("ชื่อ-นามสกุล:", emp.name);
+    const b = prompt("ธนาคาร:", emp.bank || "");
+    const a = prompt("เลขบัญชี:", emp.acc || "");
+    const u = prompt("Username ล็อกอิน:", emp.username);
+    const p = prompt("รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน):", "");
+
+    if (n) emp.name = n;
+    if (b) emp.bank = b;
+    if (a) emp.acc = a;
+    if (u) emp.username = u;
+    if (p) emp.password = p;
+
+    await saveData("employees");
+    updateAdminUI();
+    renderAdminDashboard();
+}
+
+function renderAdminDashboard() {
+    const tbody = document.getElementById('adminReportBody');
+    tbody.innerHTML = '';
+
+    [...workLogs].reverse().forEach(log => {
+        const emp = employees.find(e => e.id === Number(log.empId)) || { name: 'N/A', bank: '-', acc: '-' };
+
+        tbody.innerHTML += `
+            <tr>
+                <td><small>${log.date}</small><br><b>${emp.name}</b></td>
+                <td><span class="badge bg-light text-dark border">${emp.bank || '-'}</span><br><span class="text-primary fw-bold">${emp.acc || '-'}</span></td>
+                <td>${log.hours} ชม.</td>
+                <td class="fw-bold">${Number(log.total || 0).toLocaleString()}</td>
+                <td class="${log.status === 'paid' ? 'status-paid' : 'status-pending'}">${log.status === 'paid' ? 'จ่ายแล้ว' : 'รอ'}</td>
+                <td>
+                    <i class="bi bi-check-circle-fill text-success me-2 fs-5" style="cursor:pointer" onclick="togglePay(${log.id})"></i>
+                    <i class="bi bi-pencil fs-5" style="cursor:pointer" onclick="openEditWork(${log.id})"></i>
+                </td>
+            </tr>`;
+    });
+}
+
+function renderPublicPlans() {
+    const list = document.getElementById('loginPlanList');
+    list.innerHTML = workPlans.length
+        ? workPlans.map(p => `<div class="mb-2 border-bottom pb-1 small"><i class="bi bi-calendar-event"></i> ${p.text}</div>`).join('')
+        : "ยังไม่มีประกาศ";
+}
+
+function renderAdminPlans() {
+    const list = document.getElementById('adminPlanList');
+    list.innerHTML = workPlans.map(p => `
+        <div class="d-flex justify-content-between mb-2 p-2 border rounded small bg-white">
+            <span>${p.text}</span>
+            <i class="bi bi-trash text-danger" style="cursor:pointer" onclick="deletePlan(${p.id})"></i>
+        </div>`).join('');
+}
+
+async function addWorkPlan() {
+    const t = document.getElementById('planText').value.trim();
+    if (!t) return;
+
+    workPlans.push({ id: Date.now(), text: t });
+    document.getElementById('planText').value = '';
+
+    await saveData("workPlans");
+    renderAdminPlans();
+    renderPublicPlans();
+}
+
+async function deletePlan(id) {
+    if (!confirm("ลบแผนงานนี้?")) return;
+
+    workPlans = workPlans.filter(p => p.id !== id);
+    await saveData("workPlans");
+
+    renderAdminPlans();
+    renderPublicPlans();
+}
+
+async function addEmployee() {
+    const n = document.getElementById('empName').value.trim();
+    const b = document.getElementById('empBank').value;
+    const a = document.getElementById('empAcc').value.trim();
+
+    if (!n || !b || !a) return alert('กรอกข้อมูลให้ครบ');
+
+    const u = 'user' + (employees.length + 1);
+
+    employees.push({
+        id: Date.now(),
+        username: u,
+        password: '1234',
+        name: n,
+        bank: b,
+        acc: a,
+        photo: ''
+    });
+
+    await saveData("employees");
+    updateAdminUI();
+
+    document.getElementById('empName').value = '';
+    document.getElementById('empBank').value = '';
+    document.getElementById('empAcc').value = '';
+
+    alert('เพิ่มพนักงานสำเร็จ User คือ: ' + u);
+}
+
+async function deleteEmployee(id) {
+    if (!confirm('ลบพนักงาน?')) return;
+
+    employees = employees.filter(e => e.id !== id);
+    await saveData("employees");
+
+    updateAdminUI();
+    renderAdminDashboard();
+}
+
+async function addWorkLog() {
+    const eid = document.getElementById('selectEmp').value;
+    const d = document.getElementById('workDate').value;
+    const s = document.getElementById('startTime').value;
+    const e = document.getElementById('endTime').value;
+    const r = Number(document.getElementById('entryRate').value);
+    const f = Number(document.getElementById('entryFund').value || 0);
+
+    if (!eid || !d || !s || !e || !r) return alert('ข้อมูลไม่ครบ');
+
+    let diff = (new Date(`2024-01-01 ${e}`) - new Date(`2024-01-01 ${s}`)) / 3600000;
+    const hrs = diff < 0 ? diff + 24 : diff;
+    const total = hrs * r - f;
+
+    workLogs.push({
+        id: Date.now(),
+        empId: Number(eid),
+        date: d,
+        start: s,
+        end: e,
+        rate: r,
+        fund: f,
+        hours: hrs.toFixed(2),
+        total: total.toFixed(2),
+        status: 'pending'
+    });
+
+    await saveData("workLogs");
+    renderAdminDashboard();
+
+    alert('บันทึกงานสำเร็จ');
+}
+
+async function togglePay(id) {
+    const log = workLogs.find(l => l.id === id);
+    if (!log) return;
+
+    log.status = log.status === 'paid' ? 'pending' : 'paid';
+
+    await saveData("workLogs");
+    renderAdminDashboard();
+}
+
+function openEditWork(id) {
+    const log = workLogs.find(l => l.id === id);
+    if (!log) return;
+
+    document.getElementById('editLogId').value = log.id;
+    document.getElementById('editDate').value = log.date;
+    document.getElementById('editStart').value = log.start;
+    document.getElementById('editEnd').value = log.end;
+    document.getElementById('editRate').value = log.rate;
+    document.getElementById('editFund').value = log.fund;
+
+    workModal.show();
+}
+
+async function saveEditWork() {
+    const logId = Number(document.getElementById('editLogId').value);
+    const log = workLogs.find(l => l.id === logId);
+    if (!log) return;
+
+    log.date = document.getElementById('editDate').value;
+    log.start = document.getElementById('editStart').value;
+    log.end = document.getElementById('editEnd').value;
+    log.rate = Number(document.getElementById('editRate').value);
+    log.fund = Number(document.getElementById('editFund').value || 0);
+
+    let diff = (new Date(`2024-01-01 ${log.end}`) - new Date(`2024-01-01 ${log.start}`)) / 3600000;
+    log.hours = (diff < 0 ? diff + 24 : diff).toFixed(2);
+    log.total = (Number(log.hours) * log.rate - log.fund).toFixed(2);
+
+    await saveData("workLogs");
+    renderAdminDashboard();
+    workModal.hide();
+}
+
+function renderUserDashboard() {
+    document.getElementById('uDisplayName').innerText = currentUser.name;
+    document.getElementById('uInputBank').value = currentUser.bank || "";
+    document.getElementById('uInputAcc').value = currentUser.acc || "";
+    document.getElementById('uProfileImg').src = currentUser.photo || "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
+
+    const myLogs = workLogs.filter(l => Number(l.empId) === Number(currentUser.id));
+    const accordion = document.getElementById('monthlyAccordion');
+    accordion.innerHTML = '';
+
+    let months = {};
+    let tInc = 0;
+    let tFun = 0;
+
+    myLogs.forEach(l => {
+        const m = String(l.date).substring(0, 7);
+        if (!months[m]) months[m] = { logs: [], inc: 0, fun: 0 };
+
+        months[m].logs.push(l);
+        months[m].inc += Number(l.total || 0);
+        months[m].fun += Number(l.fund || 0);
+
+        tInc += Number(l.total || 0);
+        tFun += Number(l.fund || 0);
+    });
+
+    document.getElementById('uTotalAll').innerText = tInc.toLocaleString() + " ฿";
+    document.getElementById('uTotalFundAll').innerText = tFun.toLocaleString() + " ฿";
+
+    Object.keys(months).sort().reverse().forEach((m, idx) => {
+        let rows = months[m].logs.map(log => `
+            <tr>
+                <td><small>${log.date}</small></td>
+                <td>${log.hours} ชม.</td>
+                <td>${log.status === 'paid' ? '✅' : '⏳'}</td>
+                <td class="fw-bold">${Number(log.total || 0).toLocaleString()}</td>
+            </tr>`).join('');
+
+        accordion.innerHTML += `
+            <div class="accordion-item mb-2 shadow-sm rounded overflow-hidden border-0">
+                <h2 class="accordion-header">
+                    <button class="accordion-button ${idx === 0 ? '' : 'collapsed'} py-2" type="button" data-bs-toggle="collapse" data-bs-target="#c${m.replace('-', '')}">
                         <div class="d-flex justify-content-between w-100 align-items-center me-3 small">
                             <span class="fw-bold">${m}</span>
                             <span>รายได้: <span class="text-primary fw-bold">${months[m].inc.toLocaleString()} ฿</span></span>
                         </div>
-                    </button></h2>
-                    <div id="c${m}" class="accordion-collapse collapse ${idx===0?'show':''}" data-bs-parent="#monthlyAccordion">
-                        <div class="accordion-body p-0 small">
-                            <table class="table table-sm mb-0 text-center">
-                                <thead class="table-light"><tr><th>วันที่</th><th>ชั่วโมง</th><th>สถานะ</th><th>เงิน</th></tr></thead>
-                                <tbody>${rows}</tbody>
-                            </table>
-                        </div>
+                    </button>
+                </h2>
+                <div id="c${m.replace('-', '')}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}" data-bs-parent="#monthlyAccordion">
+                    <div class="accordion-body p-0 small">
+                        <table class="table table-sm mb-0 text-center">
+                            <thead class="table-light">
+                                <tr><th>วันที่</th><th>ชั่วโมง</th><th>สถานะ</th><th>เงิน</th></tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
                     </div>
-                </div>`;
-            });
-        }
-    </script>
+                </div>
+            </div>`;
+    });
+}
+</script>
 </body>
 </html>
