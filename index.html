@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EZ-Time - Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --primary-color: #0d6efd; --fund-color: #fd7e14; --plan-color: #ffc107; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .hidden { display: none; }
+        .status-paid { color: #198754; font-weight: bold; }
+        .status-pending { color: #fd7e14; font-weight: bold; }
+        
+        /* UI Profile */
+        .profile-wrapper { position: relative; width: 110px; margin: 0 auto; }
+        .profile-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.1); cursor: pointer; background-color: #eee; }
+        .btn-change-photo { position: absolute; bottom: 5px; right: 5px; background: var(--primary-color); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; pointer-events: none; }
+        
+        .bg-fund { background-color: var(--fund-color); color: white; }
+        .announcement-box { border-left: 5px solid var(--plan-color); background-color: #fffdf5; }
+        .nav-tabs .nav-link { color: #444; }
+        .nav-tabs .nav-link.active { font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <nav id="mainNav" class="navbar navbar-expand-lg navbar-dark bg-dark hidden">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">EZ-Time</a>
+            <button class="btn btn-outline-light btn-sm" onclick="logout()">ออกจากระบบ</button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Login Page -->
+        <div id="loginPage" class="mx-auto" style="max-width: 400px; margin-top: 50px;">
+            <div class="card p-4 text-center border-top border-primary border-4 mb-4">
+                <h2 class="mb-4 fw-bold text-primary">EZ-Time</h2>
+                <div class="mb-3"><input type="text" id="username" class="form-control" placeholder="ชื่อผู้ใช้งาน"></div>
+                <div class="mb-3"><input type="password" id="password" class="form-control" placeholder="รหัสผ่าน"></div>
+                <button class="btn btn-primary w-100 py-2" onclick="login()">เข้าสู่ระบบ</button>
+            </div>
+            <div class="card p-3 announcement-box shadow-sm">
+                <h6 class="fw-bold text-warning mb-2"><i class="bi bi-megaphone-fill"></i> แผนการทำงานครั้งถัดไป</h6>
+                <div id="loginPlanList" class="small text-muted"></div>
+            </div>
+        </div>
+
+        <!-- Admin Section -->
+        <div id="adminPage" class="hidden">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card p-3 mb-3 border-start border-primary border-4">
+                        <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-gear-fill"></i> จัดการระบบ</h5>
+                        <ul class="nav nav-tabs mb-3">
+                            <li class="nav-item"><button class="nav-link active py-1" data-bs-toggle="tab" data-bs-target="#tab-work">ลงงาน</button></li>
+                            <li class="nav-item"><button class="nav-link py-1" data-bs-toggle="tab" data-bs-target="#tab-emp">พนักงาน</button></li>
+                            <li class="nav-item"><button class="nav-link py-1" data-bs-toggle="tab" data-bs-target="#tab-plan">แผนงาน</button></li>
+                        </ul>
+                        <div class="tab-content pt-2">
+                            <!-- ลงเวลาทำงาน -->
+                            <div class="tab-pane fade show active" id="tab-work">
+                                <select id="selectEmp" class="form-select mb-2"></select>
+                                <input type="date" id="workDate" class="form-control mb-2">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6"><input type="time" id="startTime" class="form-control"></div>
+                                    <div class="col-6"><input type="time" id="endTime" class="form-control"></div>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6"><input type="number" id="entryRate" class="form-control" placeholder="เรท/ชม."></div>
+                                    <div class="col-6"><input type="number" id="entryFund" class="form-control" placeholder="หักกองทุน"></div>
+                                </div>
+                                <button class="btn btn-success w-100" onclick="addWorkLog()">บันทึกงาน</button>
+                            </div>
+                            <!-- เพิ่มพนักงาน -->
+                            <div class="tab-pane fade" id="tab-emp">
+                                <input type="text" id="empName" class="form-control mb-2" placeholder="ชื่อ-นามสกุล">
+                                <select id="empBank" class="form-select mb-2">
+                                    <option value="">-- เลือกธนาคาร --</option>
+                                    <option value="กสิกรไทย">กสิกรไทย</option>
+                                    <option value="ไทยพาณิชย์">ไทยพาณิชย์</option>
+                                    <option value="กรุงเทพ">กรุงเทพ</option>
+                                    <option value="กรุงไทย">กรุงไทย</option>
+                                    <option value="กรุงศรีฯ">กรุงศรีฯ</option>
+                                    <option value="ออมสิน">ออมสิน</option>
+                                    <option value="ttb">ttb (ทหารไทยธนชาต)</option>
+                                </select>
+                                <input type="text" id="empAcc" class="form-control mb-3" placeholder="เลขบัญชี">
+                                <button class="btn btn-primary w-100" onclick="addEmployee()">บันทึกพนักงาน</button>
+                            </div>
+                            <!-- แผนงาน -->
+                            <div class="tab-pane fade" id="tab-plan">
+                                <textarea id="planText" class="form-control mb-2" rows="2" placeholder="เพิ่มแผนงานใหม่..."></textarea>
+                                <button class="btn btn-warning btn-sm w-100" onclick="addWorkPlan()">ประกาศแผนงาน</button>
+                                <hr><div id="adminPlanList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-3"><div id="adminEmpList" class="small"></div></div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card p-3">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-table"></i> ประวัติงานและข้อมูลการโอนเงิน</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm small">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>วันที่ / พนักงาน</th>
+                                        <th>ธนาคาร / เลขบัญชี</th>
+                                        <th>ชม.</th>
+                                        <th>สุทธิ</th>
+                                        <th>สถานะ</th>
+                                        <th>จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminReportBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Section -->
+        <div id="userPage" class="hidden">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card p-3 mb-3 border-top border-primary border-4 text-center">
+                        <div class="profile-wrapper mb-3" onclick="document.getElementById('profileInput').click()">
+                            <img id="uProfileImg" src="https://via.placeholder.com/110" class="profile-img">
+                            <div class="btn-change-photo"><i class="bi bi-camera-fill"></i></div>
+                            <input type="file" id="profileInput" class="hidden" accept="image/*" onchange="uploadPhoto(this)">
+                        </div>
+                        <h4 id="uDisplayName" class="fw-bold">-</h4>
+                        
+                        <div class="mb-3 text-start small border p-2 rounded bg-light">
+                            <label class="fw-bold text-muted mb-1">ข้อมูลบัญชีรับเงิน:</label>
+                            <select id="uInputBank" class="form-select form-select-sm mb-2 border-primary shadow-none">
+                                <option value="">-- เลือกธนาคาร --</option>
+                                <option value="กสิกรไทย">กสิกรไทย</option>
+                                <option value="ไทยพาณิชย์">ไทยพาณิชย์</option>
+                                <option value="กรุงเทพ">กรุงเทพ</option>
+                                <option value="กรุงไทย">กรุงไทย</option>
+                                <option value="กรุงศรีฯ">กรุงศรีฯ</option>
+                                <option value="ออมสิน">ออมสิน</option>
+                                <option value="ttb">ttb (ทหารไทยธนชาต)</option>
+                            </select>
+                            <div class="input-group mb-2">
+                                <input type="text" id="uInputAcc" class="form-control form-control-sm border-primary shadow-none" placeholder="เลขบัญชี">
+                                <button class="btn btn-primary btn-sm" onclick="updateUserAccount()">บันทึก</button>
+                            </div>
+                            
+                            <hr>
+                            <button class="btn btn-outline-danger btn-sm w-100" onclick="changePasswordUser()">เปลี่ยนรหัสผ่านใหม่</button>
+                        </div>
+
+                        <div class="card mb-2 p-2 bg-primary text-white d-flex justify-content-between flex-row">
+                            <span>รายได้รวม:</span> <span id="uTotalAll" class="fw-bold">0</span>
+                        </div>
+                        <div class="card p-2 bg-fund text-white d-flex justify-content-between flex-row">
+                            <span>กองทุนสะสม:</span> <span id="uTotalFundAll" class="fw-bold">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="accordion shadow-sm" id="monthlyAccordion"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Work (Admin) -->
+    <div class="modal fade" id="editWorkModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5>แก้ไขข้อมูลงาน</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <input type="hidden" id="editLogId">
+            <input type="date" id="editDate" class="form-control mb-2">
+            <div class="row g-2 mb-2"><div class="col-6"><input type="time" id="editStart" class="form-control"></div><div class="col-6"><input type="time" id="editEnd" class="form-control"></div></div>
+            <div class="row g-2"><div class="col-6"><input type="number" id="editRate" class="form-control"></div><div class="col-6"><input type="number" id="editFund" class="form-control"></div></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-primary w-100" onclick="saveEditWork()">บันทึกการแก้ไข</button></div>
+    </div></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+       // *** วาง URL ของคุณตรงนี้ ***
+        const SCRIPT_URL = " https://script.google.com/macros/s/AKfycbyAjA7WUEQ3CH-l5MP4ZkHVS6uY0Hq70E7QBJPj7wC5anplaI7XMpahP9HHwE9xjr2x/exec";
+       
+        let employees = [];
+        let workLogs = [];
+        let workPlans = [];
+        let currentUser = null;
+
+        window.onload = fetchAllData;
+
+        async function fetchAllData() {
+            showLoading(true);
+            try {
+                const [eRes, lRes, pRes] = await Promise.all([
+                    fetch(SCRIPT_URL + "?action=getEmployees"),
+                    fetch(SCRIPT_URL + "?action=getLogs"),
+                    fetch(SCRIPT_URL + "?action=getPlans")
+                ]);
+                employees = await eRes.json();
+                workLogs = await lRes.json();
+                workPlans = await pRes.json();
+                renderPublicPlans();
+            } catch (err) { console.error(err); }
+            showLoading(false);
+        }
+
+async function syncData(sheetName, dataArray) {
+            showLoading(true);
+   try {
+                // แก้ไข: นำ mode: "no-cors" ออก เพื่อให้ได้รับ Response กลับมา
+                const response = await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ 
+                        action: 'syncAll', // ระบุ action ให้ชัดเจน
+                        sheet: sheetName, 
+                        data: dataArray 
+                    })
+                });
+                
+                // ตรวจสอบว่าสำเร็จหรือไม่
+                if (response.ok) {
+                    console.log("บันทึกข้อมูลเรียบร้อย");
+                }
+            } catch (error) {
+                console.error("เกิดข้อผิดพลาดในการบันทึก:", error);
+            }
+            // ปิดตัวโหลดทันทีที่ทำงานเสร็จ
+            showLoading(false); 
+        }
+        function login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            if(u === 'admin' && p === '1234') { 
+                showPage('adminPage'); updateAdminUI(); renderAdminDashboard(); renderAdminPlans(); 
+            } else {
+                const found = employees.find(e => e.username === u && (e.password || '1234') === p);
+                if(found) { currentUser = found; showPage('userPage'); renderUserDashboard(); } 
+                else alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+            }
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById('mainNav').classList.remove('hidden');
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function logout() { location.reload(); }
+
+        function saveData() {
+            localStorage.setItem('ez_v4_emp', JSON.stringify(employees));
+            localStorage.setItem('ez_v4_logs', JSON.stringify(workLogs));
+            localStorage.setItem('ez_v4_plans', JSON.stringify(workPlans));
+        }
+
+        // --- User: Actions ---
+        function uploadPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgData = e.target.result;
+                    document.getElementById('uProfileImg').src = imgData;
+                    currentUser.photo = imgData;
+                    const idx = employees.findIndex(emp => emp.id === currentUser.id);
+                    if(idx !== -1) employees[idx].photo = imgData;
+                    saveData();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function updateUserAccount() {
+            const newBank = document.getElementById('uInputBank').value;
+            const newAcc = document.getElementById('uInputAcc').value;
+            if(!newBank || !newAcc) return alert('กรุณาระบุธนาคารและเลขบัญชี');
+            
+            currentUser.bank = newBank;
+            currentUser.acc = newAcc;
+            const idx = employees.findIndex(e => e.id === currentUser.id);
+            if(idx !== -1) {
+                employees[idx].bank = newBank;
+                employees[idx].acc = newAcc;
+            }
+            saveData();
+            alert('บันทึกข้อมูลบัญชีสำเร็จ');
+            if(document.getElementById('adminPage').className === '') updateAdminUI(); 
+        }
+
+        function changePasswordUser() {
+            const oldP = prompt("ระบุรหัสผ่านปัจจุบัน:");
+            if(!oldP) return;
+            if(oldP !== (currentUser.password || '1234')) return alert("รหัสผ่านปัจจุบันไม่ถูกต้อง");
+            const newP = prompt("ระบุรหัสผ่านใหม่ (4 ตัวขึ้นไป):");
+            if(newP && newP.length >= 4) {
+                currentUser.password = newP;
+                const idx = employees.findIndex(e => e.id === currentUser.id);
+                if(idx !== -1) employees[idx].password = newP;
+                saveData(); alert("เปลี่ยนรหัสผ่านสำเร็จ!");
+            }
+        }
+
+        // --- Admin: UI ---
+        function updateAdminUI() {
+            const select = document.getElementById('selectEmp');
+            select.innerHTML = '<option value="">-- เลือกพนักงาน --</option>';
+            employees.forEach(e => select.innerHTML += `<option value="${e.id}">${e.name}</option>`);
+            
+            const empList = document.getElementById('adminEmpList'); 
+            empList.innerHTML = '<h6 class="fw-bold border-bottom pb-2">รายชื่อพนักงาน</h6>';
+            employees.forEach(e => {
+                empList.innerHTML += `<div class="mb-2 p-2 border rounded bg-white shadow-sm d-flex justify-content-between align-items-center">
+                    <div>
+                        <b>${e.name}</b><br>
+                        <small class="text-muted">User: ${e.username}</small><br>
+                        <small class="text-primary">${e.bank || '-'} ${e.acc}</small>
+                    </div>
+                    <div>
+                        <i class="bi bi-pencil-square me-2" style="cursor:pointer" onclick="editEmployeeAdmin(${e.id})"></i>
+                        <i class="bi bi-trash text-danger" style="cursor:pointer" onclick="deleteEmployee(${e.id})"></i>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function editEmployeeAdmin(id) {
+            const emp = employees.find(e => e.id === id);
+            const n = prompt("ชื่อ-นามสกุล:", emp.name);
+            const b = prompt("ธนาคาร:", emp.bank || "");
+            const a = prompt("เลขบัญชี:", emp.acc);
+            const u = prompt("Username ล็อกอิน:", emp.username);
+            const p = prompt("รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน):", "");
+
+            if(n) emp.name = n;
+            if(b) emp.bank = b;
+            if(a) emp.acc = a;
+            if(u) emp.username = u;
+            if(p) emp.password = p;
+
+            saveData(); updateAdminUI(); renderAdminDashboard();
+        }
+
+        function renderAdminDashboard() {
+            const tbody = document.getElementById('adminReportBody'); tbody.innerHTML = '';
+            [...workLogs].reverse().forEach(log => {
+                const emp = employees.find(e => e.id === log.empId) || {name: 'N/A', bank: '-', acc: '-'};
+                tbody.innerHTML += `<tr>
+                    <td><small>${log.date}</small><br><b>${emp.name}</b></td>
+                    <td><span class="badge bg-light text-dark border">${emp.bank}</span><br><span class="text-primary fw-bold">${emp.acc}</span></td>
+                    <td>${log.hours}ชม.</td><td class="fw-bold">${parseFloat(log.total).toLocaleString()}</td>
+                    <td class="${log.status==='paid'?'status-paid':'status-pending'}">${log.status==='paid'?'จ่ายแล้ว':'รอ'}</td>
+                    <td><i class="bi bi-check-circle-fill text-success me-2 fs-5" style="cursor:pointer" onclick="togglePay(${log.id})"></i><i class="bi bi-pencil fs-5" style="cursor:pointer" onclick="openEditWork(${log.id})"></i></td></tr>`;
+            });
+        }
+
+        // --- Other Functions ---
+        function renderPublicPlans() {
+            const list = document.getElementById('loginPlanList');
+            list.innerHTML = workPlans.length ? workPlans.map(p => `<div class="mb-2 border-bottom pb-1 small"><i class="bi bi-calendar-event"></i> ${p.text}</div>`).join('') : "ยังไม่มีประกาศ";
+        }
+        function renderAdminPlans() {
+            const list = document.getElementById('adminPlanList');
+            list.innerHTML = workPlans.map(p => `<div class="d-flex justify-content-between mb-2 p-2 border rounded small bg-white"><span>${p.text}</span><i class="bi bi-trash text-danger" onclick="deletePlan(${p.id})"></i></div>`).join('');
+        }
+        function addWorkPlan() {
+            const t = document.getElementById('planText').value; if(!t) return;
+            workPlans.push({ id: Date.now(), text: t }); document.getElementById('planText').value = ''; saveData(); renderAdminPlans(); renderPublicPlans();
+        }
+        function deletePlan(id) { workPlans = workPlans.filter(p => p.id !== id); saveData(); renderAdminPlans(); renderPublicPlans(); }
+        function addEmployee() {
+            const n = document.getElementById('empName').value, b = document.getElementById('empBank').value, a = document.getElementById('empAcc').value;
+            if(!n || !b || !a) return alert('กรอกข้อมูลให้ครบ');
+            const u = 'user' + (employees.length + 1);
+            employees.push({ id: Date.now(), username: u, password: '1234', name: n, bank: b, acc: a, photo: '' });
+            saveData(); updateAdminUI(); alert('เพิ่มพนักงานสำเร็จ User คือ: ' + u);
+        }
+        function deleteEmployee(id) { if(confirm('ลบพนักงาน?')) { employees = employees.filter(e => e.id !== id); saveData(); updateAdminUI(); } }
+        function addWorkLog() {
+            const eid = document.getElementById('selectEmp').value, d = document.getElementById('workDate').value;
+            const s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
+            const r = document.getElementById('entryRate').value, f = document.getElementById('entryFund').value || 0;
+            if(!eid || !d || !s || !e || !r) return alert('ข้อมูลไม่ครบ');
+            let diff = (new Date(`2024-01-01 ${e}`) - new Date(`2024-01-01 ${s}`)) / 3600000;
+            const hrs = diff < 0 ? (diff + 24).toFixed(2) : diff.toFixed(2);
+            workLogs.push({ id: Date.now(), empId: parseInt(eid), date: d, start: s, end: e, rate: parseFloat(r), fund: parseFloat(f), hours: hrs, total: (hrs * r - f).toFixed(2), status: 'pending' });
+            saveData(); renderAdminDashboard(); alert('บันทึกงานสำเร็จ');
+        }
+        function togglePay(id) { const log = workLogs.find(l => l.id === id); log.status = log.status === 'paid' ? 'pending' : 'paid'; saveData(); renderAdminDashboard(); }
+        function openEditWork(id) { const log = workLogs.find(l => l.id === id); document.getElementById('editLogId').value = log.id; document.getElementById('editDate').value = log.date; document.getElementById('editStart').value = log.start; document.getElementById('editEnd').value = log.end; document.getElementById('editRate').value = log.rate; document.getElementById('editFund').value = log.fund; workModal.show(); }
+        function saveEditWork() {
+            const log = workLogs.find(l => l.id === parseInt(document.getElementById('editLogId').value));
+            log.date = document.getElementById('editDate').value; log.start = document.getElementById('editStart').value; log.end = document.getElementById('editEnd').value;
+            log.rate = parseFloat(document.getElementById('editRate').value); log.fund = parseFloat(document.getElementById('editFund').value);
+            let diff = (new Date(`2024-01-01 ${log.end}`) - new Date(`2024-01-01 ${log.start}`)) / 3600000;
+            log.hours = diff < 0 ? (diff + 24).toFixed(2) : diff.toFixed(2);
+            log.total = (log.hours * log.rate - log.fund).toFixed(2);
+            saveData(); renderAdminDashboard(); workModal.hide();
+        }
+        function renderUserDashboard() {
+            document.getElementById('uDisplayName').innerText = currentUser.name;
+            document.getElementById('uInputBank').value = currentUser.bank || "";
+            document.getElementById('uInputAcc').value = currentUser.acc;
+            document.getElementById('uProfileImg').src = currentUser.photo || "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
+            const myLogs = workLogs.filter(l => l.empId === currentUser.id);
+            const accordion = document.getElementById('monthlyAccordion'); accordion.innerHTML = '';
+            let months = {}, tInc = 0, tFun = 0;
+            myLogs.forEach(l => {
+                const m = l.date.substring(0, 7);
+                if(!months[m]) months[m] = { logs: [], inc: 0, fun: 0 };
+                months[m].logs.push(l); months[m].inc += parseFloat(l.total); months[m].fun += parseFloat(l.fund);
+                tInc += parseFloat(l.total); tFun += parseFloat(l.fund);
+            });
+            document.getElementById('uTotalAll').innerText = tInc.toLocaleString() + " ฿";
+            document.getElementById('uTotalFundAll').innerText = tFun.toLocaleString() + " ฿";
+            Object.keys(months).sort().reverse().forEach((m, idx) => {
+                let rows = months[m].logs.map(log => `<tr><td><small>${log.date}</small></td><td>${log.hours}ชม.</td><td>${log.status==='paid'?'✅':'⏳'}</td><td class="fw-bold">${parseFloat(log.total).toLocaleString()}</td></tr>`).join('');
+                accordion.innerHTML += `<div class="accordion-item mb-2 shadow-sm rounded overflow-hidden border-0">
+                    <h2 class="accordion-header"><button class="accordion-button ${idx===0?'':'collapsed'} py-2" type="button" data-bs-toggle="collapse" data-bs-target="#c${m}">
+                        <div class="d-flex justify-content-between w-100 align-items-center me-3 small">
+                            <span class="fw-bold">${m}</span>
+                            <span>รายได้: <span class="text-primary fw-bold">${months[m].inc.toLocaleString()} ฿</span></span>
+                        </div>
+                    </button></h2>
+                    <div id="c${m}" class="accordion-collapse collapse ${idx===0?'show':''}" data-bs-parent="#monthlyAccordion">
+                        <div class="accordion-body p-0 small">
+                            <table class="table table-sm mb-0 text-center">
+                                <thead class="table-light"><tr><th>วันที่</th><th>ชั่วโมง</th><th>สถานะ</th><th>เงิน</th></tr></thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
+    </script>
+</body>
+</html>
