@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EZ-Time - Management System</title>
+    <title>E-GA.working</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -23,13 +23,62 @@
         .announcement-box { border-left: 5px solid var(--plan-color); background-color: #fffdf5; }
         .nav-tabs .nav-link { color: #444; }
         .nav-tabs .nav-link.active { font-weight: bold; }
+        /* Login Card */
+.login-card{
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    background: #ffffff;
+}
+
+/* โลโก้ */
+.logo-wrapper{
+    margin-bottom: 15px;
+}
+
+.logo-img{
+    width: 160px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
+    transition: all 0.3s ease;
+}
+
+.logo-img:hover{
+    transform: scale(1.05);
+}
+
+/* Input */
+.custom-input{
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #dbe3ea;
+    transition: all 0.2s ease;
+}
+
+.custom-input:focus{
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
+}
+
+/* ปุ่ม */
+.login-btn{
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.25s ease;
+}
+
+.login-btn:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(13,110,253,0.25);
+}
     </style>
 </head>
 <body>
 
     <nav id="mainNav" class="navbar navbar-expand-lg navbar-dark bg-dark hidden">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">EZ-Time</a>
+            <a class="navbar-brand fw-bold" href="#">E-GA.working</a>
             <button class="btn btn-outline-light btn-sm" onclick="logout()">ออกจากระบบ</button>
         </div>
     </nav>
@@ -37,12 +86,29 @@
     <div class="container mt-4">
         <!-- Login Page -->
         <div id="loginPage" class="mx-auto" style="max-width: 400px; margin-top: 50px;">
-            <div class="card p-4 text-center border-top border-primary border-4 mb-4">
-                <h2 class="mb-4 fw-bold text-primary">EZ-Time</h2>
-                <div class="mb-3"><input type="text" id="username" class="form-control" placeholder="ชื่อผู้ใช้งาน"></div>
-                <div class="mb-3"><input type="password" id="password" class="form-control" placeholder="รหัสผ่าน"></div>
-                <button class="btn btn-primary w-100 py-2" onclick="login()">เข้าสู่ระบบ</button>
-            </div>
+           <div class="card p-4 text-center border-top border-primary border-4 mb-4 login-card">
+
+    <!-- โลโก้ -->
+    <div class="logo-wrapper">
+        <img src="e-galogo.png" alt="E-GA Logo" class="logo-img">
+    </div>
+
+    <h2 class="mb-1 fw-bold text-primary">E-GA.working</h2>
+    <p class="text-muted small mb-4">สำหรับเช็คเวลาการมาช่วยงานต่างๆ</p>
+
+    <div class="mb-3">
+        <input type="text" id="username" class="form-control custom-input" placeholder="ชื่อผู้ใช้งาน">
+    </div>
+
+    <div class="mb-3">
+        <input type="password" id="password" class="form-control custom-input" placeholder="รหัสผ่าน">
+    </div>
+
+    <button class="btn btn-primary w-100 py-2 login-btn" onclick="login()">
+        <i class="bi bi-box-arrow-in-right"></i> เข้าสู่ระบบ
+    </button>
+
+</div>
             <div class="card p-3 announcement-box shadow-sm">
                 <h6 class="fw-bold text-warning mb-2"><i class="bi bi-megaphone-fill"></i> แผนการทำงานครั้งถัดไป</h6>
                 <div id="loginPlanList" class="small text-muted"></div>
@@ -275,27 +341,33 @@ async function saveData(sheetName) {
     if (sheetName === "workPlans") await syncData("workPlans", workPlans);
 }
 
-function login() {
+async function login() {
     const u = document.getElementById('username').value.trim();
     const p = document.getElementById('password').value.trim();
 
-    if (u === 'admin' && p === '1234') {
-        showPage('adminPage');
-        updateAdminUI();
-        renderAdminDashboard();
-        renderAdminPlans();
-    } else {
-        const found = employees.find(e => e.username === u && String(e.password || '1234') === p);
-        if (found) {
-            currentUser = found;
+    const res = await fetch(
+        SCRIPT_URL +
+        "?action=login&username=" + encodeURIComponent(u) +
+        "&password=" + encodeURIComponent(p)
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+        if (data.role === "admin") {
+            showPage('adminPage');
+            updateAdminUI();
+            renderAdminDashboard();
+            renderAdminPlans();
+        } else {
+            currentUser = employees.find(e => e.username === u);
             showPage('userPage');
             renderUserDashboard();
-        } else {
-            alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
         }
+    } else {
+        alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
     }
 }
-
 function showPage(id) {
     document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
     document.getElementById('mainNav').classList.remove('hidden');
@@ -307,20 +379,36 @@ function logout() {
 }
 
 function uploadPhoto(input) {
+    if (!currentUser) return alert("กรุณาเข้าสู่ระบบก่อน");
+
     if (input.files && input.files[0]) {
+        const file = input.files[0];
         const reader = new FileReader();
+
         reader.onload = async function(e) {
             const imgData = e.target.result;
             document.getElementById('uProfileImg').src = imgData;
 
-            currentUser.photo = imgData;
-            const idx = employees.findIndex(emp => emp.id === currentUser.id);
-            if (idx !== -1) employees[idx].photo = imgData;
+            const base64 = imgData.split(",")[1];
 
-            await saveData("employees");
-            alert("อัปเดตรูปเรียบร้อย");
+            await fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({
+                    action: "uploadPhoto",
+                    empId: currentUser.id,
+                    fileName: "employee_" + currentUser.id + "_" + Date.now() + ".png",
+                    mimeType: file.type,
+                    base64: base64
+                })
+            });
+
+            currentUser.photo = imgData;
+
+            alert("อัปโหลดรูปไป Google Drive แล้ว กรุณารีเฟรชหน้าเว็บ 1 ครั้ง");
         };
-        reader.readAsDataURL(input.files[0]);
+
+        reader.readAsDataURL(file);
     }
 }
 
