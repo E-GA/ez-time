@@ -188,7 +188,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
        // *** วาง URL ของคุณตรงนี้ ***
-        const SCRIPT_URL = " https://script.google.com/macros/s/AKfycbyAjA7WUEQ3CH-l5MP4ZkHVS6uY0Hq70E7QBJPj7wC5anplaI7XMpahP9HHwE9xjr2x/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyAjA7WUEQ3CH-l5MP4ZkHVS6uY0Hq70E7QBJPj7wC5anplaI7XMpahP9HHwE9xjr2x/exec";
        
         let employees = [];
         let workLogs = [];
@@ -256,11 +256,17 @@ async function syncData(sheetName, dataArray) {
 
         function logout() { location.reload(); }
 
-        function saveData() {
-            localStorage.setItem('ez_v4_emp', JSON.stringify(employees));
-            localStorage.setItem('ez_v4_logs', JSON.stringify(workLogs));
-            localStorage.setItem('ez_v4_plans', JSON.stringify(workPlans));
-        }
+  async function saveData() {
+    localStorage.setItem('ez_v4_emp', JSON.stringify(employees));
+    localStorage.setItem('ez_v4_logs', JSON.stringify(workLogs));
+    localStorage.setItem('ez_v4_plans', JSON.stringify(workPlans));
+
+    await Promise.all([
+        syncData("employees", employees),
+        syncData("workLogs", workLogs),
+        syncData("workPlans", workPlans)
+    ]);
+}
 
         // --- User: Actions ---
         function uploadPhoto(input) {
@@ -273,6 +279,7 @@ async function syncData(sheetName, dataArray) {
                     const idx = employees.findIndex(emp => emp.id === currentUser.id);
                     if(idx !== -1) employees[idx].photo = imgData;
                     saveData();
+alert("อัปเดตรูปเรียบร้อย");
                 };
                 reader.readAsDataURL(input.files[0]);
             }
