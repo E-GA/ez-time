@@ -162,60 +162,88 @@ function logout() {
 }
 
 async function uploadPhoto(input) {
-  if (!currentUser) return alert("กรุณาเข้าสู่ระบบก่อน");
+
+  if (!currentUser) {
+    alert("กรุณาเข้าสู่ระบบก่อน");
+    return;
+  }
+
   if (!input.files || !input.files[0]) return;
 
   const file = input.files[0];
 
-  if (file.size > 1500000) {
-    alert("รูปใหญ่เกินไป กรุณาใช้รูปไม่เกิน 1.5MB");
+  // จำกัดขนาดรูป
+  if (file.size > 2 * 1024 * 1024) {
+    alert("รูปใหญ่เกินไป (ไม่เกิน 2MB)");
     return;
   }
 
   const reader = new FileReader();
 
-  reader.onload = async function(e) {
-    const imgData = e.target.result;
-    const base64 = imgData.split(",")[1];
+  reader.onload = function(e) {
 
+    const imgData = e.target.result;
+
+    // แสดงรูปทันที
     document.getElementById("uProfileImg").src = imgData;
 
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "uploadPhoto",
-          empId: currentUser.id,
-          fileName: "employee_" + currentUser.id + "_" + Date.now() + ".png",
-          mimeType: file.type,
-          base64: base64
-        })
-      });
+    // แปลงเป็น Base64
+    const base64 = imgData.split(",")[1];
 
-      const result = await response.json();
+    // ใช้ FormData แทน
+    const form = new FormData();
 
-      if (!result.success) {
-        alert("อัปโหลดรูปไม่สำเร็จ: " + (result.message || ""));
-        return;
-      }
+    form.append("data", JSON.stringify({
+      action: "uploadPhoto",
+      empId: currentUser.id,
+      fileName: "emp_" + currentUser.id + ".png",
+      mimeType: file.type,
+      base64: base64
+    }));
 
-      currentUser.photo = result.url;
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({
+        action: "uploadPhoto",
+        empId: currentUser.id,
+        fileName: "emp_" + currentUser.id + ".png",
+        mimeType: file.type,
+        base64: base64
+      })
+    })
+    .then(() => {
 
-      const idx = employees.findIndex(emp => Number(emp.id) === Number(currentUser.id));
-      if (idx !== -1) employees[idx].photo = result.url;
+      alert("อัปโหลดรูปแล้ว กรุณารอ 3-5 วินาที แล้วเข้าสู่ระบบใหม่");
 
-      document.getElementById("uProfileImg").src = result.url;
-      alert("อัปโหลดรูปสำเร็จ");
+      // โหลดข้อมูลใหม่
+      setTimeout(async () => {
 
-    } catch (err) {
+        await fetchAllData();
+
+        currentUser = employees.find(e =>
+          Number(e.id) === Number(currentUser.id)
+        );
+
+        if (currentUser && currentUser.photo) {
+          document.getElementById("uProfileImg").src =
+            currentUser.photo;
+        }
+
+      }, 4000);
+
+    })
+    .catch(err => {
+
       console.error(err);
       alert("อัปโหลดรูปไม่สำเร็จ");
-    }
+
+    });
+
   };
 
   reader.readAsDataURL(file);
 }
-
 async function updateUserAccount() {
   const newBank = document.getElementById("uInputBank").value;
   const newAcc = document.getElementById("uInputAcc").value.trim();
@@ -489,9 +517,6 @@ function renderUserDashboard() {
     .filter(l => Number(l.empId) === Number(currentUser.id))
     .sort((a, b) => new Date(formatDateOnly(b.date)) - new Date(formatDateOnly(a.date)));
 
-  const listArea = document.getElementById("monthlyAccordion");
-  listArea.innerHTML = "";
-
   let totalAll = 0;
   let totalFund = 0;
   let totalPaid = 0;
@@ -504,11 +529,8 @@ function renderUserDashboard() {
     totalAll += total;
     totalFund += fund;
 
-    if (log.status === "paid") {
-      totalPaid += total;
-    } else {
-      totalPending += total;
-    }
+    if (log.status === "paid") totalPaid += total;
+    else totalPending += total;
   });
 
   document.getElementById("uTotalFundAll").innerText = totalFund.toLocaleString() + " ฿";
@@ -516,37 +538,81 @@ function renderUserDashboard() {
   document.getElementById("uTotalPaid").innerText = totalPaid.toLocaleString() + " ฿";
   document.getElementById("uTotalPending").innerText = totalPending.toLocaleString() + " ฿";
 
-  const rows = myLogs.map(log => `
-    <tr>
-      <td><small>${formatDateOnly(log.date)}</small></td>
-      <td>${Number(log.hours || 0)} ชม.</td>
-      <td>${Number(log.rate || 0).toLocaleString()} ฿/ชม.</td>
-      <td>${log.status === "paid" ? "✅ จ่ายแล้ว" : "⏳ รออนุมัติ"}</td>
-      <td class="fw-bold">${Number(log.total || 0).toLocaleString()} ฿</td>
-    </tr>
-  `).join("");
+  const allLogs = myLogs;
+  const pendingLogs = myLogs.filter(log => log.status !== "paid");
+  const paidLogs = myLogs.filter(log => log.status === "paid");
 
-  listArea.innerHTML = `
+  const makeRows = (logs) => {
+    if (!logs.length) {
+      return `<tr><td colspan="5" class="text-muted">ยังไม่มีรายการ</td></tr>`;
+    }
+
+    return logs.map(log => `
+      <tr>
+        <td><small>${formatDateOnly(log.date)}</small></td>
+        <td>${Number(log.hours || 0)} ชม.</td>
+        <td>${Number(log.rate || 0).toLocaleString()} ฿/ชม.</td>
+        <td>${log.status === "paid" ? "✅ จ่ายแล้ว" : "⏳ รออนุมัติ"}</td>
+        <td class="fw-bold">${Number(log.total || 0).toLocaleString()} ฿</td>
+      </tr>
+    `).join("");
+  };
+
+  const makeTable = (logs) => `
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered text-center align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>วันที่</th>
+            <th>ชั่วโมง</th>
+            <th>เรท/ชม.</th>
+            <th>สถานะ</th>
+            <th>เงิน</th>
+          </tr>
+        </thead>
+        <tbody>${makeRows(logs)}</tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById("monthlyAccordion").innerHTML = `
     <div class="card p-3">
       <h5 class="fw-bold mb-3">
-        <i class="bi bi-list-ul"></i> รายการทั้งหมด
+        <i class="bi bi-list-ul"></i> รายการงานของฉัน
       </h5>
 
-      <div class="table-responsive">
-        <table class="table table-sm table-bordered text-center align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>วันที่</th>
-              <th>ชั่วโมง</th>
-              <th>เรท/ชม.</th>
-              <th>สถานะ</th>
-              <th>เงิน</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows || `<tr><td colspan="5" class="text-muted">ยังไม่มีรายการ</td></tr>`}
-          </tbody>
-        </table>
+      <ul class="nav nav-tabs mb-3" id="userWorkTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#userAllLogs" type="button">
+            รายการทั้งหมด
+          </button>
+        </li>
+
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#userPendingLogs" type="button">
+            รายการที่รออนุมัติ
+          </button>
+        </li>
+
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#userPaidLogs" type="button">
+            รายการที่จ่ายแล้ว
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="userAllLogs">
+          ${makeTable(allLogs)}
+        </div>
+
+        <div class="tab-pane fade" id="userPendingLogs">
+          ${makeTable(pendingLogs)}
+        </div>
+
+        <div class="tab-pane fade" id="userPaidLogs">
+          ${makeTable(paidLogs)}
+        </div>
       </div>
     </div>
   `;
