@@ -270,8 +270,16 @@ function showLoading(status) {
     console.log(status ? "กำลังโหลด..." : "โหลดเสร็จ");
 }
 
+function formatDateOnly(value) {
+    if (!value) return "-";
+    const text = String(value);
+    if (text.includes("T")) return text.split("T")[0];
+    return text.substring(0, 10);
+}
+
 async function fetchAllData() {
     showLoading(true);
+
     try {
         const [eRes, lRes, pRes] = await Promise.all([
             fetch(SCRIPT_URL + "?action=getEmployees"),
@@ -292,6 +300,7 @@ async function fetchAllData() {
             ...l,
             id: Number(l.id),
             empId: Number(l.empId),
+            date: formatDateOnly(l.date),
             rate: Number(l.rate || 0),
             fund: Number(l.fund || 0),
             hours: Number(l.hours || 0),
@@ -304,10 +313,12 @@ async function fetchAllData() {
         }));
 
         renderPublicPlans();
+
     } catch (err) {
         console.error("โหลดข้อมูลไม่สำเร็จ:", err);
         alert("โหลดข้อมูลจาก Google Sheet ไม่สำเร็จ");
     }
+
     showLoading(false);
 }
 
@@ -325,6 +336,7 @@ async function syncData(sheetName, dataArray) {
         });
 
         console.log("บันทึกลง Google Sheet:", sheetName);
+
     } catch (error) {
         console.error("บันทึกไม่สำเร็จ:", error);
         alert("บันทึกข้อมูลไม่สำเร็จ");
@@ -368,6 +380,7 @@ async function login() {
         alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
     }
 }
+
 function showPage(id) {
     document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
     document.getElementById('mainNav').classList.remove('hidden');
@@ -379,64 +392,43 @@ function logout() {
 }
 
 async function uploadPhoto(input) {
-
-    if (!currentUser) return;
-
+    if (!currentUser) return alert("กรุณาเข้าสู่ระบบก่อน");
     if (!input.files || !input.files[0]) return;
 
     const file = input.files[0];
 
+    if (file.size > 1500000) {
+        alert("รูปใหญ่เกินไป กรุณาใช้รูปไม่เกิน 1.5MB");
+        return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = async function(e) {
+        const imgData = e.target.result;
+        const base64 = imgData.split(",")[1];
 
-        const base64 = e.target.result.split(",")[1];
+        document.getElementById('uProfileImg').src = imgData;
 
         try {
-
-            const response = await fetch(SCRIPT_URL, {
+            await fetch(SCRIPT_URL, {
                 method: "POST",
+                mode: "no-cors",
                 body: JSON.stringify({
                     action: "uploadPhoto",
                     empId: currentUser.id,
-                    fileName: file.name,
+                    fileName: "employee_" + currentUser.id + "_" + Date.now() + ".png",
                     mimeType: file.type,
                     base64: base64
                 })
             });
 
-            const result = await response.json();
+            alert("อัปโหลดรูปแล้ว กรุณารอสักครู่ แล้วเข้าสู่ระบบใหม่อีกครั้ง");
 
-            if (result.success) {
-
-                // ใช้ URL จาก Google Drive จริง
-                currentUser.photo = result.url;
-
-                const idx = employees.findIndex(emp =>
-                    emp.id === currentUser.id
-                );
-
-                if (idx !== -1) {
-                    employees[idx].photo = result.url;
-                }
-
-                document.getElementById('uProfileImg').src = result.url;
-
-                alert("อัปโหลดรูปสำเร็จ");
-
-            } else {
-
-                alert("อัปโหลดไม่สำเร็จ");
-
-            }
-
-        } catch(err) {
-
+        } catch (err) {
             console.error(err);
-            alert("เกิดข้อผิดพลาด");
-
+            alert("อัปโหลดรูปไม่สำเร็จ");
         }
-
     };
 
     reader.readAsDataURL(file);
@@ -459,26 +451,6 @@ async function updateUserAccount() {
 
     await saveData("employees");
     alert('บันทึกข้อมูลบัญชีสำเร็จ');
-}
-
-async function changePasswordUser() {
-    const oldP = prompt("ระบุรหัสผ่านปัจจุบัน:");
-    if (!oldP) return;
-
-    if (oldP !== String(currentUser.password || '1234')) {
-        return alert("รหัสผ่านปัจจุบันไม่ถูกต้อง");
-    }
-
-    const newP = prompt("ระบุรหัสผ่านใหม่ (4 ตัวขึ้นไป):");
-    if (newP && newP.length >= 4) {
-        currentUser.password = newP;
-
-        const idx = employees.findIndex(e => e.id === currentUser.id);
-        if (idx !== -1) employees[idx].password = newP;
-
-        await saveData("employees");
-        alert("เปลี่ยนรหัสผ่านสำเร็จ");
-    }
 }
 
 function updateAdminUI() {
@@ -516,7 +488,7 @@ async function editEmployeeAdmin(id) {
     const b = prompt("ธนาคาร:", emp.bank || "");
     const a = prompt("เลขบัญชี:", emp.acc || "");
     const u = prompt("Username ล็อกอิน:", emp.username);
-    const p = prompt("รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน):", "");
+    const p = prompt("รหัสผ่านใหม่ ถ้าไม่เปลี่ยนให้เว้นว่าง:", "");
 
     if (n) emp.name = n;
     if (b) emp.bank = b;
@@ -538,14 +510,20 @@ function renderAdminDashboard() {
 
         tbody.innerHTML += `
             <tr>
-                <td><small>${log.date}</small><br><b>${emp.name}</b></td>
-                <td><span class="badge bg-light text-dark border">${emp.bank || '-'}</span><br><span class="text-primary fw-bold">${emp.acc || '-'}</span></td>
-                <td>${log.hours} ชม.</td>
+                <td><small>${formatDateOnly(log.date)}</small><br><b>${emp.name}</b></td>
+                <td>
+                    <span class="badge bg-light text-dark border">${emp.bank || '-'}</span><br>
+                    <span class="text-primary fw-bold">${emp.acc || '-'}</span>
+                </td>
+                <td>${Number(log.hours || 0)} ชม.</td>
                 <td class="fw-bold">${Number(log.total || 0).toLocaleString()}</td>
-                <td class="${log.status === 'paid' ? 'status-paid' : 'status-pending'}">${log.status === 'paid' ? 'จ่ายแล้ว' : 'รอ'}</td>
+                <td class="${log.status === 'paid' ? 'status-paid' : 'status-pending'}">
+                    ${log.status === 'paid' ? 'จ่ายแล้ว' : 'รอ'}
+                </td>
                 <td>
                     <i class="bi bi-check-circle-fill text-success me-2 fs-5" style="cursor:pointer" onclick="togglePay(${log.id})"></i>
-                    <i class="bi bi-pencil fs-5" style="cursor:pointer" onclick="openEditWork(${log.id})"></i>
+                    <i class="bi bi-pencil fs-5 me-2" style="cursor:pointer" onclick="openEditWork(${log.id})"></i>
+                    <i class="bi bi-trash text-danger fs-5" style="cursor:pointer" onclick="deleteWorkLog(${log.id})"></i>
                 </td>
             </tr>`;
     });
@@ -582,7 +560,7 @@ async function addWorkPlan() {
 async function deletePlan(id) {
     if (!confirm("ลบแผนงานนี้?")) return;
 
-    workPlans = workPlans.filter(p => p.id !== id);
+    workPlans = workPlans.filter(p => Number(p.id) !== Number(id));
     await saveData("workPlans");
 
     renderAdminPlans();
@@ -621,7 +599,7 @@ async function addEmployee() {
 async function deleteEmployee(id) {
     if (!confirm('ลบพนักงาน?')) return;
 
-    employees = employees.filter(e => e.id !== id);
+    employees = employees.filter(e => Number(e.id) !== Number(id));
     await saveData("employees");
 
     updateAdminUI();
@@ -662,7 +640,7 @@ async function addWorkLog() {
 }
 
 async function togglePay(id) {
-    const log = workLogs.find(l => l.id === id);
+    const log = workLogs.find(l => Number(l.id) === Number(id));
     if (!log) return;
 
     log.status = log.status === 'paid' ? 'pending' : 'paid';
@@ -671,12 +649,25 @@ async function togglePay(id) {
     renderAdminDashboard();
 }
 
+async function deleteWorkLog(id) {
+    if (!confirm("ต้องการลบรายการประวัติงานนี้ใช่ไหม?")) return;
+
+    workLogs = workLogs.filter(l => Number(l.id) !== Number(id));
+
+    await saveData("workLogs");
+    renderAdminDashboard();
+
+    if (currentUser) renderUserDashboard();
+
+    alert("ลบรายการเรียบร้อย");
+}
+
 function openEditWork(id) {
-    const log = workLogs.find(l => l.id === id);
+    const log = workLogs.find(l => Number(l.id) === Number(id));
     if (!log) return;
 
     document.getElementById('editLogId').value = log.id;
-    document.getElementById('editDate').value = log.date;
+    document.getElementById('editDate').value = formatDateOnly(log.date);
     document.getElementById('editStart').value = log.start;
     document.getElementById('editEnd').value = log.end;
     document.getElementById('editRate').value = log.rate;
@@ -687,7 +678,7 @@ function openEditWork(id) {
 
 async function saveEditWork() {
     const logId = Number(document.getElementById('editLogId').value);
-    const log = workLogs.find(l => l.id === logId);
+    const log = workLogs.find(l => Number(l.id) === logId);
     if (!log) return;
 
     log.date = document.getElementById('editDate').value;
@@ -709,7 +700,8 @@ function renderUserDashboard() {
     document.getElementById('uDisplayName').innerText = currentUser.name;
     document.getElementById('uInputBank').value = currentUser.bank || "";
     document.getElementById('uInputAcc').value = currentUser.acc || "";
-    document.getElementById('uProfileImg').src = currentUser.photo || "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
+    document.getElementById('uProfileImg').src =
+        currentUser.photo || "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
 
     const myLogs = workLogs.filter(l => Number(l.empId) === Number(currentUser.id));
     const accordion = document.getElementById('monthlyAccordion');
@@ -720,7 +712,8 @@ function renderUserDashboard() {
     let tFun = 0;
 
     myLogs.forEach(l => {
-        const m = String(l.date).substring(0, 7);
+        const m = formatDateOnly(l.date).substring(0, 7);
+
         if (!months[m]) months[m] = { logs: [], inc: 0, fun: 0 };
 
         months[m].logs.push(l);
@@ -737,8 +730,9 @@ function renderUserDashboard() {
     Object.keys(months).sort().reverse().forEach((m, idx) => {
         let rows = months[m].logs.map(log => `
             <tr>
-                <td><small>${log.date}</small></td>
-                <td>${log.hours} ชม.</td>
+                <td><small>${formatDateOnly(log.date)}</small></td>
+                <td>${Number(log.hours || 0)} ชม.</td>
+                <td>${Number(log.rate || 0).toLocaleString()} ฿/ชม.</td>
                 <td>${log.status === 'paid' ? '✅' : '⏳'}</td>
                 <td class="fw-bold">${Number(log.total || 0).toLocaleString()}</td>
             </tr>`).join('');
@@ -753,11 +747,18 @@ function renderUserDashboard() {
                         </div>
                     </button>
                 </h2>
+
                 <div id="c${m.replace('-', '')}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}" data-bs-parent="#monthlyAccordion">
                     <div class="accordion-body p-0 small">
                         <table class="table table-sm mb-0 text-center">
                             <thead class="table-light">
-                                <tr><th>วันที่</th><th>ชั่วโมง</th><th>สถานะ</th><th>เงิน</th></tr>
+                                <tr>
+                                    <th>วันที่</th>
+                                    <th>ชั่วโมง</th>
+                                    <th>เรท/ชม.</th>
+                                    <th>สถานะ</th>
+                                    <th>เงิน</th>
+                                </tr>
                             </thead>
                             <tbody>${rows}</tbody>
                         </table>
