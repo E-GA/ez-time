@@ -1,783 +1,216 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-GA.working</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        :root { --primary-color: #0d6efd; --fund-color: #fd7e14; --plan-color: #ffc107; }
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .hidden { display: none; }
-        .status-paid { color: #198754; font-weight: bold; }
-        .status-pending { color: #fd7e14; font-weight: bold; }
-        
-        /* UI Profile */
-        .profile-wrapper { position: relative; width: 110px; margin: 0 auto; }
-        .profile-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.1); cursor: pointer; background-color: #eee; }
-        .btn-change-photo { position: absolute; bottom: 5px; right: 5px; background: var(--primary-color); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; pointer-events: none; }
-        
-        .bg-fund { background-color: var(--fund-color); color: white; }
-        .announcement-box { border-left: 5px solid var(--plan-color); background-color: #fffdf5; }
-        .nav-tabs .nav-link { color: #444; }
-        .nav-tabs .nav-link.active { font-weight: bold; }
-        /* Login Card */
-.login-card{
-    border-radius: 18px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    background: #ffffff;
-}
-
-/* โลโก้ */
-.logo-wrapper{
-    margin-bottom: 15px;
-}
-
-.logo-img{
-    width: 160px;
-    height: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
-    transition: all 0.3s ease;
-}
-
-.logo-img:hover{
-    transform: scale(1.05);
-}
-
-/* Input */
-.custom-input{
-    border-radius: 12px;
-    padding: 12px;
-    border: 1px solid #dbe3ea;
-    transition: all 0.2s ease;
-}
-
-.custom-input:focus{
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
-}
-
-/* ปุ่ม */
-.login-btn{
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 16px;
-    transition: all 0.25s ease;
-}
-
-.login-btn:hover{
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(13,110,253,0.25);
-}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-GA.working</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <nav id="mainNav" class="navbar navbar-expand-lg navbar-dark bg-dark hidden">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">E-GA.working</a>
-            <button class="btn btn-outline-light btn-sm" onclick="logout()">ออกจากระบบ</button>
+  <nav id="mainNav" class="navbar navbar-expand-lg navbar-dark bg-dark hidden">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">E-GA.working</a>
+      <button class="btn btn-outline-light btn-sm" onclick="logout()">ออกจากระบบ</button>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <div id="loginPage" class="mx-auto" style="max-width: 400px; margin-top: 50px;">
+      <div class="card p-4 text-center border-top border-primary border-4 mb-4 login-card">
+        <div class="logo-wrapper">
+          <img src="e-galogo.png" alt="E-GA Logo" class="logo-img">
         </div>
-    </nav>
 
-    <div class="container mt-4">
-        <!-- Login Page -->
-        <div id="loginPage" class="mx-auto" style="max-width: 400px; margin-top: 50px;">
-           <div class="card p-4 text-center border-top border-primary border-4 mb-4 login-card">
+        <h2 class="mb-1 fw-bold text-primary">E-GA.working</h2>
+        <p class="text-muted small mb-4">สำหรับเช็คเวลาการมาช่วยงานต่างๆ</p>
 
-    <!-- โลโก้ -->
-    <div class="logo-wrapper">
-        <img src="e-galogo.png" alt="E-GA Logo" class="logo-img">
+        <div class="mb-3">
+          <input type="text" id="username" class="form-control custom-input" placeholder="ชื่อผู้ใช้งาน">
+        </div>
+
+        <div class="mb-3">
+          <input type="password" id="password" class="form-control custom-input" placeholder="รหัสผ่าน">
+        </div>
+
+        <button class="btn btn-primary w-100 py-2 login-btn" onclick="login()">
+          <i class="bi bi-box-arrow-in-right"></i> เข้าสู่ระบบ
+        </button>
+      </div>
+
+      <div class="card p-3 announcement-box shadow-sm">
+        <h6 class="fw-bold text-warning mb-2"><i class="bi bi-megaphone-fill"></i> แผนการทำงานครั้งถัดไป</h6>
+        <div id="loginPlanList" class="small text-muted"></div>
+      </div>
     </div>
 
-    <h2 class="mb-1 fw-bold text-primary">E-GA.working</h2>
-    <p class="text-muted small mb-4">สำหรับเช็คเวลาการมาช่วยงานต่างๆ</p>
+    <div id="adminPage" class="hidden">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card p-3 mb-3 border-start border-primary border-4">
+            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-gear-fill"></i> จัดการระบบ</h5>
 
-    <div class="mb-3">
-        <input type="text" id="username" class="form-control custom-input" placeholder="ชื่อผู้ใช้งาน">
-    </div>
+            <ul class="nav nav-tabs mb-3">
+              <li class="nav-item"><button class="nav-link active py-1" data-bs-toggle="tab" data-bs-target="#tab-work">ลงงาน</button></li>
+              <li class="nav-item"><button class="nav-link py-1" data-bs-toggle="tab" data-bs-target="#tab-emp">พนักงาน</button></li>
+              <li class="nav-item"><button class="nav-link py-1" data-bs-toggle="tab" data-bs-target="#tab-plan">แผนงาน</button></li>
+            </ul>
 
-    <div class="mb-3">
-        <input type="password" id="password" class="form-control custom-input" placeholder="รหัสผ่าน">
-    </div>
+            <div class="tab-content pt-2">
+              <div class="tab-pane fade show active" id="tab-work">
+                <select id="selectEmp" class="form-select mb-2"></select>
+                <input type="date" id="workDate" class="form-control mb-2">
+                <div class="row g-2 mb-2">
+                  <div class="col-6"><input type="time" id="startTime" class="form-control"></div>
+                  <div class="col-6"><input type="time" id="endTime" class="form-control"></div>
+                </div>
+                <div class="row g-2 mb-3">
+                  <div class="col-6"><input type="number" id="entryRate" class="form-control" placeholder="เรท/ชม."></div>
+                  <div class="col-6"><input type="number" id="entryFund" class="form-control" placeholder="หักกองทุน"></div>
+                </div>
+                <button class="btn btn-success w-100" onclick="addWorkLog()">บันทึกงาน</button>
+              </div>
 
-    <button class="btn btn-primary w-100 py-2 login-btn" onclick="login()">
-        <i class="bi bi-box-arrow-in-right"></i> เข้าสู่ระบบ
-    </button>
+              <div class="tab-pane fade" id="tab-emp">
+                <input type="text" id="empName" class="form-control mb-2" placeholder="ชื่อ-นามสกุล">
+                <select id="empBank" class="form-select mb-2">
+                  <option value="">-- เลือกธนาคาร --</option>
+                  <option value="กสิกรไทย">กสิกรไทย</option>
+                  <option value="ไทยพาณิชย์">ไทยพาณิชย์</option>
+                  <option value="กรุงเทพ">กรุงเทพ</option>
+                  <option value="กรุงไทย">กรุงไทย</option>
+                  <option value="กรุงศรีฯ">กรุงศรีฯ</option>
+                  <option value="ออมสิน">ออมสิน</option>
+                  <option value="ttb">ttb (ทหารไทยธนชาต)</option>
+                </select>
+                <input type="text" id="empAcc" class="form-control mb-3" placeholder="เลขบัญชี">
+                <button class="btn btn-primary w-100" onclick="addEmployee()">บันทึกพนักงาน</button>
+              </div>
 
-</div>
-            <div class="card p-3 announcement-box shadow-sm">
-                <h6 class="fw-bold text-warning mb-2"><i class="bi bi-megaphone-fill"></i> แผนการทำงานครั้งถัดไป</h6>
-                <div id="loginPlanList" class="small text-muted"></div>
+              <div class="tab-pane fade" id="tab-plan">
+                <textarea id="planText" class="form-control mb-2" rows="2" placeholder="เพิ่มแผนงานใหม่..."></textarea>
+                <button class="btn btn-warning btn-sm w-100" onclick="addWorkPlan()">ประกาศแผนงาน</button>
+                <hr>
+                <div id="adminPlanList"></div>
+              </div>
             </div>
+          </div>
+
+          <div class="card p-3">
+            <div id="adminEmpList" class="small"></div>
+          </div>
         </div>
 
-        <!-- Admin Section -->
-        <div id="adminPage" class="hidden">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card p-3 mb-3 border-start border-primary border-4">
-                        <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-gear-fill"></i> จัดการระบบ</h5>
-                        <ul class="nav nav-tabs mb-3">
-                            <li class="nav-item"><button class="nav-link active py-1" data-bs-toggle="tab" data-bs-target="#tab-work">ลงงาน</button></li>
-                            <li class="nav-item"><button class="nav-link py-1" data-bs-toggle="tab" data-bs-target="#tab-emp">พนักงาน</button></li>
-                            <li class="nav-item"><button class="nav-link py-1" data-bs-toggle="tab" data-bs-target="#tab-plan">แผนงาน</button></li>
-                        </ul>
-                        <div class="tab-content pt-2">
-                            <!-- ลงเวลาทำงาน -->
-                            <div class="tab-pane fade show active" id="tab-work">
-                                <select id="selectEmp" class="form-select mb-2"></select>
-                                <input type="date" id="workDate" class="form-control mb-2">
-                                <div class="row g-2 mb-2">
-                                    <div class="col-6"><input type="time" id="startTime" class="form-control"></div>
-                                    <div class="col-6"><input type="time" id="endTime" class="form-control"></div>
-                                </div>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6"><input type="number" id="entryRate" class="form-control" placeholder="เรท/ชม."></div>
-                                    <div class="col-6"><input type="number" id="entryFund" class="form-control" placeholder="หักกองทุน"></div>
-                                </div>
-                                <button class="btn btn-success w-100" onclick="addWorkLog()">บันทึกงาน</button>
-                            </div>
-                            <!-- เพิ่มพนักงาน -->
-                            <div class="tab-pane fade" id="tab-emp">
-                                <input type="text" id="empName" class="form-control mb-2" placeholder="ชื่อ-นามสกุล">
-                                <select id="empBank" class="form-select mb-2">
-                                    <option value="">-- เลือกธนาคาร --</option>
-                                    <option value="กสิกรไทย">กสิกรไทย</option>
-                                    <option value="ไทยพาณิชย์">ไทยพาณิชย์</option>
-                                    <option value="กรุงเทพ">กรุงเทพ</option>
-                                    <option value="กรุงไทย">กรุงไทย</option>
-                                    <option value="กรุงศรีฯ">กรุงศรีฯ</option>
-                                    <option value="ออมสิน">ออมสิน</option>
-                                    <option value="ttb">ttb (ทหารไทยธนชาต)</option>
-                                </select>
-                                <input type="text" id="empAcc" class="form-control mb-3" placeholder="เลขบัญชี">
-                                <button class="btn btn-primary w-100" onclick="addEmployee()">บันทึกพนักงาน</button>
-                            </div>
-                            <!-- แผนงาน -->
-                            <div class="tab-pane fade" id="tab-plan">
-                                <textarea id="planText" class="form-control mb-2" rows="2" placeholder="เพิ่มแผนงานใหม่..."></textarea>
-                                <button class="btn btn-warning btn-sm w-100" onclick="addWorkPlan()">ประกาศแผนงาน</button>
-                                <hr><div id="adminPlanList"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card p-3"><div id="adminEmpList" class="small"></div></div>
-                </div>
-
-                <div class="col-md-8">
-                    <div class="card p-3">
-                        <h5 class="fw-bold mb-3"><i class="bi bi-table"></i> ประวัติงานและข้อมูลการโอนเงิน</h5>
-                        <div class="table-responsive">
-                            <table class="table table-sm small">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>วันที่ / พนักงาน</th>
-                                        <th>ธนาคาร / เลขบัญชี</th>
-                                        <th>ชม.</th>
-                                        <th>สุทธิ</th>
-                                        <th>สถานะ</th>
-                                        <th>จัดการ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="adminReportBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- User Section -->
-        <div id="userPage" class="hidden">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card p-3 mb-3 border-top border-primary border-4 text-center">
-                        <div class="profile-wrapper mb-3" onclick="document.getElementById('profileInput').click()">
-                            <img id="uProfileImg" src="https://via.placeholder.com/110" class="profile-img">
-                            <div class="btn-change-photo"><i class="bi bi-camera-fill"></i></div>
-                            <input type="file" id="profileInput" class="hidden" accept="image/*" onchange="uploadPhoto(this)">
-                        </div>
-                        <h4 id="uDisplayName" class="fw-bold">-</h4>
-                        
-                        <div class="mb-3 text-start small border p-2 rounded bg-light">
-                            <label class="fw-bold text-muted mb-1">ข้อมูลบัญชีรับเงิน:</label>
-                            <select id="uInputBank" class="form-select form-select-sm mb-2 border-primary shadow-none">
-                                <option value="">-- เลือกธนาคาร --</option>
-                                <option value="กสิกรไทย">กสิกรไทย</option>
-                                <option value="ไทยพาณิชย์">ไทยพาณิชย์</option>
-                                <option value="กรุงเทพ">กรุงเทพ</option>
-                                <option value="กรุงไทย">กรุงไทย</option>
-                                <option value="กรุงศรีฯ">กรุงศรีฯ</option>
-                                <option value="ออมสิน">ออมสิน</option>
-                                <option value="ttb">ttb (ทหารไทยธนชาต)</option>
-                            </select>
-                            <div class="input-group mb-2">
-                                <input type="text" id="uInputAcc" class="form-control form-control-sm border-primary shadow-none" placeholder="เลขบัญชี">
-                                <button class="btn btn-primary btn-sm" onclick="updateUserAccount()">บันทึก</button>
-                            </div>
-                            
-                            <hr>
-                            
-                        </div>
-
-                        <div class="card mb-2 p-2 bg-fund text-white d-flex justify-content-between flex-row">
-    <span>กองทุนสะสม:</span> <span id="uTotalFundAll" class="fw-bold">0</span>
-</div>
-
-<div class="card mb-2 p-2 bg-primary text-white d-flex justify-content-between flex-row">
-    <span>รายได้รวมทั้งหมด:</span> <span id="uTotalAll" class="fw-bold">0</span>
-</div>
-
-<div class="card mb-2 p-2 bg-success text-white d-flex justify-content-between flex-row">
-    <span>รายได้รวมที่จ่ายแล้ว:</span> <span id="uTotalPaid" class="fw-bold">0</span>
-</div>
-
-<div class="card p-2 bg-warning text-dark d-flex justify-content-between flex-row">
-    <span>รายได้ค้างจ่ายรออนุมัติ:</span> <span id="uTotalPending" class="fw-bold">0</span>
-</div>
-                    </div>
-                </div>
-                <div class="col-md-8">
-                    <div class="accordion shadow-sm" id="monthlyAccordion"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Edit Work (Admin) -->
-    <div class="modal fade" id="editWorkModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-        <div class="modal-header"><h5>แก้ไขข้อมูลงาน</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-            <input type="hidden" id="editLogId">
-            <input type="date" id="editDate" class="form-control mb-2">
-            <div class="row g-2 mb-2"><div class="col-6"><input type="time" id="editStart" class="form-control"></div><div class="col-6"><input type="time" id="editEnd" class="form-control"></div></div>
-            <div class="row g-2"><div class="col-6"><input type="number" id="editRate" class="form-control"></div><div class="col-6"><input type="number" id="editFund" class="form-control"></div></div>
-        </div>
-        <div class="modal-footer"><button class="btn btn-primary w-100" onclick="saveEditWork()">บันทึกการแก้ไข</button></div>
-    </div></div></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYqQe9Ev227ki0Pocio-z-X4vaM37NPI55HipVqdSGmNXuqI2Ix7jQawcEMEG8Cgsn/exec";
-
-let employees = [];
-let workLogs = [];
-let workPlans = [];
-let currentUser = null;
-let workModal = null;
-
-window.onload = async function () {
-    workModal = new bootstrap.Modal(document.getElementById('editWorkModal'));
-    await fetchAllData();
-};
-
-function showLoading(status) {
-    console.log(status ? "กำลังโหลด..." : "โหลดเสร็จ");
-}
-
-function formatDateOnly(value) {
-    if (!value) return "-";
-    const text = String(value);
-    if (text.includes("T")) return text.split("T")[0];
-    return text.substring(0, 10);
-}
-
-async function fetchAllData() {
-    showLoading(true);
-
-    try {
-        const [eRes, lRes, pRes] = await Promise.all([
-            fetch(SCRIPT_URL + "?action=getEmployees"),
-            fetch(SCRIPT_URL + "?action=getLogs"),
-            fetch(SCRIPT_URL + "?action=getPlans")
-        ]);
-
-        employees = await eRes.json();
-        workLogs = await lRes.json();
-        workPlans = await pRes.json();
-
-        employees = employees.map(e => ({
-            ...e,
-            id: Number(e.id)
-        }));
-
-        workLogs = workLogs.map(l => ({
-            ...l,
-            id: Number(l.id),
-            empId: Number(l.empId),
-            date: formatDateOnly(l.date),
-            rate: Number(l.rate || 0),
-            fund: Number(l.fund || 0),
-            hours: Number(l.hours || 0),
-            total: Number(l.total || 0)
-        }));
-
-        workPlans = workPlans.map(p => ({
-            ...p,
-            id: Number(p.id)
-        }));
-
-        renderPublicPlans();
-
-    } catch (err) {
-        console.error("โหลดข้อมูลไม่สำเร็จ:", err);
-        alert("โหลดข้อมูลจาก Google Sheet ไม่สำเร็จ");
-    }
-
-    showLoading(false);
-}
-
-async function syncData(sheetName, dataArray) {
-    if (!Array.isArray(dataArray)) return;
-
-    try {
-        await fetch(SCRIPT_URL, {
-            method: "POST",
-            mode: "no-cors",
-            body: JSON.stringify({
-                sheet: sheetName,
-                data: dataArray
-            })
-        });
-
-        console.log("บันทึกลง Google Sheet:", sheetName);
-
-    } catch (error) {
-        console.error("บันทึกไม่สำเร็จ:", error);
-        alert("บันทึกข้อมูลไม่สำเร็จ");
-    }
-}
-
-async function saveData(sheetName) {
-    localStorage.setItem('ez_v4_emp', JSON.stringify(employees));
-    localStorage.setItem('ez_v4_logs', JSON.stringify(workLogs));
-    localStorage.setItem('ez_v4_plans', JSON.stringify(workPlans));
-
-    if (sheetName === "employees") await syncData("employees", employees);
-    if (sheetName === "workLogs") await syncData("workLogs", workLogs);
-    if (sheetName === "workPlans") await syncData("workPlans", workPlans);
-}
-
-async function login() {
-    const u = document.getElementById('username').value.trim();
-    const p = document.getElementById('password').value.trim();
-
-    const res = await fetch(
-        SCRIPT_URL +
-        "?action=login&username=" + encodeURIComponent(u) +
-        "&password=" + encodeURIComponent(p)
-    );
-
-    const data = await res.json();
-
-    if (data.success) {
-        if (data.role === "admin") {
-            showPage('adminPage');
-            updateAdminUI();
-            renderAdminDashboard();
-            renderAdminPlans();
-        } else {
-            currentUser = employees.find(e => e.username === u);
-            showPage('userPage');
-            renderUserDashboard();
-        }
-    } else {
-        alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
-    }
-}
-
-function showPage(id) {
-    document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-    document.getElementById('mainNav').classList.remove('hidden');
-    document.getElementById(id).classList.remove('hidden');
-}
-
-function logout() {
-    location.reload();
-}
-
-async function uploadPhoto(input) {
-    if (!currentUser) return alert("กรุณาเข้าสู่ระบบก่อน");
-    if (!input.files || !input.files[0]) return;
-
-    const file = input.files[0];
-
-    if (file.size > 1500000) {
-        alert("รูปใหญ่เกินไป กรุณาใช้รูปไม่เกิน 1.5MB");
-        return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = async function(e) {
-        const imgData = e.target.result;
-        const base64 = imgData.split(",")[1];
-
-        document.getElementById('uProfileImg').src = imgData;
-
-        try {
-            await fetch(SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify({
-                    action: "uploadPhoto",
-                    empId: currentUser.id,
-                    fileName: "employee_" + currentUser.id + "_" + Date.now() + ".png",
-                    mimeType: file.type,
-                    base64: base64
-                })
-            });
-
-            alert("อัปโหลดรูปแล้ว กรุณารอสักครู่ แล้วเข้าสู่ระบบใหม่อีกครั้ง");
-
-        } catch (err) {
-            console.error(err);
-            alert("อัปโหลดรูปไม่สำเร็จ");
-        }
-    };
-
-    reader.readAsDataURL(file);
-}
-
-async function updateUserAccount() {
-    const newBank = document.getElementById('uInputBank').value;
-    const newAcc = document.getElementById('uInputAcc').value;
-
-    if (!newBank || !newAcc) return alert('กรุณาระบุธนาคารและเลขบัญชี');
-
-    currentUser.bank = newBank;
-    currentUser.acc = newAcc;
-
-    const idx = employees.findIndex(e => e.id === currentUser.id);
-    if (idx !== -1) {
-        employees[idx].bank = newBank;
-        employees[idx].acc = newAcc;
-    }
-
-    await saveData("employees");
-    alert('บันทึกข้อมูลบัญชีสำเร็จ');
-}
-
-function updateAdminUI() {
-    const select = document.getElementById('selectEmp');
-    select.innerHTML = '<option value="">-- เลือกพนักงาน --</option>';
-
-    employees.forEach(e => {
-        select.innerHTML += `<option value="${e.id}">${e.name}</option>`;
-    });
-
-    const empList = document.getElementById('adminEmpList');
-    empList.innerHTML = '<h6 class="fw-bold border-bottom pb-2">รายชื่อพนักงาน</h6>';
-
-    employees.forEach(e => {
-        empList.innerHTML += `
-            <div class="mb-2 p-2 border rounded bg-white shadow-sm d-flex justify-content-between align-items-center">
-                <div>
-                    <b>${e.name}</b><br>
-                    <small class="text-muted">User: ${e.username}</small><br>
-                    <small class="text-primary">${e.bank || '-'} ${e.acc || ''}</small>
-                </div>
-                <div>
-                    <i class="bi bi-pencil-square me-2" style="cursor:pointer" onclick="editEmployeeAdmin(${e.id})"></i>
-                    <i class="bi bi-trash text-danger" style="cursor:pointer" onclick="deleteEmployee(${e.id})"></i>
-                </div>
-            </div>`;
-    });
-}
-
-async function editEmployeeAdmin(id) {
-    const emp = employees.find(e => e.id === id);
-    if (!emp) return;
-
-    const n = prompt("ชื่อ-นามสกุล:", emp.name);
-    const b = prompt("ธนาคาร:", emp.bank || "");
-    const a = prompt("เลขบัญชี:", emp.acc || "");
-    const u = prompt("Username ล็อกอิน:", emp.username);
-    const p = prompt("รหัสผ่านใหม่ ถ้าไม่เปลี่ยนให้เว้นว่าง:", "");
-
-    if (n) emp.name = n;
-    if (b) emp.bank = b;
-    if (a) emp.acc = a;
-    if (u) emp.username = u;
-    if (p) emp.password = p;
-
-    await saveData("employees");
-    updateAdminUI();
-    renderAdminDashboard();
-}
-
-function renderAdminDashboard() {
-    const tbody = document.getElementById('adminReportBody');
-    tbody.innerHTML = '';
-
-    [...workLogs].reverse().forEach(log => {
-        const emp = employees.find(e => e.id === Number(log.empId)) || { name: 'N/A', bank: '-', acc: '-' };
-
-        tbody.innerHTML += `
-            <tr>
-                <td><small>${formatDateOnly(log.date)}</small><br><b>${emp.name}</b></td>
-                <td>
-                    <span class="badge bg-light text-dark border">${emp.bank || '-'}</span><br>
-                    <span class="text-primary fw-bold">${emp.acc || '-'}</span>
-                </td>
-                <td>${Number(log.hours || 0)} ชม.</td>
-                <td class="fw-bold">${Number(log.total || 0).toLocaleString()}</td>
-                <td class="${log.status === 'paid' ? 'status-paid' : 'status-pending'}">
-                    ${log.status === 'paid' ? 'จ่ายแล้ว' : 'รอ'}
-                </td>
-                <td>
-                    <i class="bi bi-check-circle-fill text-success me-2 fs-5" style="cursor:pointer" onclick="togglePay(${log.id})"></i>
-                    <i class="bi bi-pencil fs-5 me-2" style="cursor:pointer" onclick="openEditWork(${log.id})"></i>
-                    <i class="bi bi-trash text-danger fs-5" style="cursor:pointer" onclick="deleteWorkLog(${log.id})"></i>
-                </td>
-            </tr>`;
-    });
-}
-
-function renderPublicPlans() {
-    const list = document.getElementById('loginPlanList');
-    list.innerHTML = workPlans.length
-        ? workPlans.map(p => `<div class="mb-2 border-bottom pb-1 small"><i class="bi bi-calendar-event"></i> ${p.text}</div>`).join('')
-        : "ยังไม่มีประกาศ";
-}
-
-function renderAdminPlans() {
-    const list = document.getElementById('adminPlanList');
-    list.innerHTML = workPlans.map(p => `
-        <div class="d-flex justify-content-between mb-2 p-2 border rounded small bg-white">
-            <span>${p.text}</span>
-            <i class="bi bi-trash text-danger" style="cursor:pointer" onclick="deletePlan(${p.id})"></i>
-        </div>`).join('');
-}
-
-async function addWorkPlan() {
-    const t = document.getElementById('planText').value.trim();
-    if (!t) return;
-
-    workPlans.push({ id: Date.now(), text: t });
-    document.getElementById('planText').value = '';
-
-    await saveData("workPlans");
-    renderAdminPlans();
-    renderPublicPlans();
-}
-
-async function deletePlan(id) {
-    if (!confirm("ลบแผนงานนี้?")) return;
-
-    workPlans = workPlans.filter(p => Number(p.id) !== Number(id));
-    await saveData("workPlans");
-
-    renderAdminPlans();
-    renderPublicPlans();
-}
-
-async function addEmployee() {
-    const n = document.getElementById('empName').value.trim();
-    const b = document.getElementById('empBank').value;
-    const a = document.getElementById('empAcc').value.trim();
-
-    if (!n || !b || !a) return alert('กรอกข้อมูลให้ครบ');
-
-    const u = 'user' + (employees.length + 1);
-
-    employees.push({
-        id: Date.now(),
-        username: u,
-        password: '1234',
-        name: n,
-        bank: b,
-        acc: a,
-        photo: ''
-    });
-
-    await saveData("employees");
-    updateAdminUI();
-
-    document.getElementById('empName').value = '';
-    document.getElementById('empBank').value = '';
-    document.getElementById('empAcc').value = '';
-
-    alert('เพิ่มพนักงานสำเร็จ User คือ: ' + u);
-}
-
-async function deleteEmployee(id) {
-    if (!confirm('ลบพนักงาน?')) return;
-
-    employees = employees.filter(e => Number(e.id) !== Number(id));
-    await saveData("employees");
-
-    updateAdminUI();
-    renderAdminDashboard();
-}
-
-async function addWorkLog() {
-    const eid = document.getElementById('selectEmp').value;
-    const d = document.getElementById('workDate').value;
-    const s = document.getElementById('startTime').value;
-    const e = document.getElementById('endTime').value;
-    const r = Number(document.getElementById('entryRate').value);
-    const f = Number(document.getElementById('entryFund').value || 0);
-
-    if (!eid || !d || !s || !e || !r) return alert('ข้อมูลไม่ครบ');
-
-    let diff = (new Date(`2024-01-01 ${e}`) - new Date(`2024-01-01 ${s}`)) / 3600000;
-    const hrs = diff < 0 ? diff + 24 : diff;
-    const total = hrs * r - f;
-
-    workLogs.push({
-        id: Date.now(),
-        empId: Number(eid),
-        date: d,
-        start: s,
-        end: e,
-        rate: r,
-        fund: f,
-        hours: hrs.toFixed(2),
-        total: total.toFixed(2),
-        status: 'pending'
-    });
-
-    await saveData("workLogs");
-    renderAdminDashboard();
-
-    alert('บันทึกงานสำเร็จ');
-}
-
-async function togglePay(id) {
-    const log = workLogs.find(l => Number(l.id) === Number(id));
-    if (!log) return;
-
-    log.status = log.status === 'paid' ? 'pending' : 'paid';
-
-    await saveData("workLogs");
-    renderAdminDashboard();
-}
-
-async function deleteWorkLog(id) {
-    if (!confirm("ต้องการลบรายการประวัติงานนี้ใช่ไหม?")) return;
-
-    workLogs = workLogs.filter(l => Number(l.id) !== Number(id));
-
-    await saveData("workLogs");
-    renderAdminDashboard();
-
-    if (currentUser) renderUserDashboard();
-
-    alert("ลบรายการเรียบร้อย");
-}
-
-function openEditWork(id) {
-    const log = workLogs.find(l => Number(l.id) === Number(id));
-    if (!log) return;
-
-    document.getElementById('editLogId').value = log.id;
-    document.getElementById('editDate').value = formatDateOnly(log.date);
-    document.getElementById('editStart').value = log.start;
-    document.getElementById('editEnd').value = log.end;
-    document.getElementById('editRate').value = log.rate;
-    document.getElementById('editFund').value = log.fund;
-
-    workModal.show();
-}
-
-async function saveEditWork() {
-    const logId = Number(document.getElementById('editLogId').value);
-    const log = workLogs.find(l => Number(l.id) === logId);
-    if (!log) return;
-
-    log.date = document.getElementById('editDate').value;
-    log.start = document.getElementById('editStart').value;
-    log.end = document.getElementById('editEnd').value;
-    log.rate = Number(document.getElementById('editRate').value);
-    log.fund = Number(document.getElementById('editFund').value || 0);
-
-    let diff = (new Date(`2024-01-01 ${log.end}`) - new Date(`2024-01-01 ${log.start}`)) / 3600000;
-    log.hours = (diff < 0 ? diff + 24 : diff).toFixed(2);
-    log.total = (Number(log.hours) * log.rate - log.fund).toFixed(2);
-
-    await saveData("workLogs");
-    renderAdminDashboard();
-    workModal.hide();
-}
-
-function renderUserDashboard() {
-    document.getElementById('uDisplayName').innerText = currentUser.name;
-    document.getElementById('uInputBank').value = currentUser.bank || "";
-    document.getElementById('uInputAcc').value = currentUser.acc || "";
-    document.getElementById('uProfileImg').src =
-        currentUser.photo || "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
-
-    const myLogs = workLogs
-        .filter(l => Number(l.empId) === Number(currentUser.id))
-        .sort((a, b) => new Date(formatDateOnly(b.date)) - new Date(formatDateOnly(a.date)));
-
-    const listArea = document.getElementById('monthlyAccordion');
-    listArea.innerHTML = '';
-
-    let totalAll = 0;
-    let totalFund = 0;
-    let totalPaid = 0;
-    let totalPending = 0;
-
-    myLogs.forEach(log => {
-        const total = Number(log.total || 0);
-        const fund = Number(log.fund || 0);
-
-        totalAll += total;
-        totalFund += fund;
-
-        if (log.status === "paid") {
-            totalPaid += total;
-        } else {
-            totalPending += total;
-        }
-    });
-
-    document.getElementById('uTotalFundAll').innerText = totalFund.toLocaleString() + " ฿";
-    document.getElementById('uTotalAll').innerText = totalAll.toLocaleString() + " ฿";
-    document.getElementById('uTotalPaid').innerText = totalPaid.toLocaleString() + " ฿";
-    document.getElementById('uTotalPending').innerText = totalPending.toLocaleString() + " ฿";
-
-    const rows = myLogs.map(log => `
-        <tr>
-            <td><small>${formatDateOnly(log.date)}</small></td>
-            <td>${Number(log.hours || 0)} ชม.</td>
-            <td>${Number(log.rate || 0).toLocaleString()} ฿/ชม.</td>
-            <td>${log.status === 'paid' ? '✅ จ่ายแล้ว' : '⏳ รออนุมัติ'}</td>
-            <td class="fw-bold">${Number(log.total || 0).toLocaleString()} ฿</td>
-        </tr>
-    `).join('');
-
-    listArea.innerHTML = `
-        <div class="card p-3">
-            <h5 class="fw-bold mb-3">
-                <i class="bi bi-list-ul"></i> รายการทั้งหมด
-            </h5>
-
+        <div class="col-md-8">
+          <div class="card p-3">
+            <h5 class="fw-bold mb-3"><i class="bi bi-table"></i> ประวัติงานและข้อมูลการโอนเงิน</h5>
             <div class="table-responsive">
-                <table class="table table-sm table-bordered text-center align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>วันที่</th>
-                            <th>ชั่วโมง</th>
-                            <th>เรท/ชม.</th>
-                            <th>สถานะ</th>
-                            <th>เงิน</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rows || `<tr><td colspan="5" class="text-muted">ยังไม่มีรายการ</td></tr>`}
-                    </tbody>
-                </table>
+              <table class="table table-sm small">
+                <thead class="table-light">
+                  <tr>
+                    <th>วันที่ / พนักงาน</th>
+                    <th>ธนาคาร / เลขบัญชี</th>
+                    <th>ชม.</th>
+                    <th>สุทธิ</th>
+                    <th>สถานะ</th>
+                    <th>จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="adminReportBody"></tbody>
+              </table>
             </div>
+          </div>
         </div>
-    `;
-}
-</script>
+      </div>
+    </div>
+
+    <div id="userPage" class="hidden">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card p-3 mb-3 border-top border-primary border-4 text-center">
+            <div class="profile-wrapper mb-3" onclick="document.getElementById('profileInput').click()">
+              <img id="uProfileImg" src="https://via.placeholder.com/110" class="profile-img">
+              <div class="btn-change-photo"><i class="bi bi-camera-fill"></i></div>
+              <input type="file" id="profileInput" class="hidden" accept="image/*" onchange="uploadPhoto(this)">
+            </div>
+
+            <h4 id="uDisplayName" class="fw-bold">-</h4>
+
+            <div class="mb-3 text-start small border p-2 rounded bg-light">
+              <label class="fw-bold text-muted mb-1">ข้อมูลบัญชีรับเงิน:</label>
+              <select id="uInputBank" class="form-select form-select-sm mb-2 border-primary shadow-none">
+                <option value="">-- เลือกธนาคาร --</option>
+                <option value="กสิกรไทย">กสิกรไทย</option>
+                <option value="ไทยพาณิชย์">ไทยพาณิชย์</option>
+                <option value="กรุงเทพ">กรุงเทพ</option>
+                <option value="กรุงไทย">กรุงไทย</option>
+                <option value="กรุงศรีฯ">กรุงศรีฯ</option>
+                <option value="ออมสิน">ออมสิน</option>
+                <option value="ttb">ttb (ทหารไทยธนชาต)</option>
+              </select>
+
+              <div class="input-group mb-2">
+                <input type="text" id="uInputAcc" class="form-control form-control-sm border-primary shadow-none" placeholder="เลขบัญชี">
+                <button class="btn btn-primary btn-sm" onclick="updateUserAccount()">บันทึก</button>
+              </div>
+            </div>
+
+            <div class="card mb-2 p-2 bg-fund text-white d-flex justify-content-between flex-row summary-card">
+              <span>กองทุนสะสม:</span> <span id="uTotalFundAll" class="fw-bold">0</span>
+            </div>
+
+            <div class="card mb-2 p-2 bg-primary text-white d-flex justify-content-between flex-row summary-card">
+              <span>รายได้รวมทั้งหมด:</span> <span id="uTotalAll" class="fw-bold">0</span>
+            </div>
+
+            <div class="card mb-2 p-2 bg-success text-white d-flex justify-content-between flex-row summary-card">
+              <span>รายได้รวมที่จ่ายแล้ว:</span> <span id="uTotalPaid" class="fw-bold">0</span>
+            </div>
+
+            <div class="card p-2 bg-warning text-dark d-flex justify-content-between flex-row summary-card">
+              <span>รายได้ค้างจ่ายรออนุมัติ:</span> <span id="uTotalPending" class="fw-bold">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-8">
+          <div id="monthlyAccordion"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="editWorkModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5>แก้ไขข้อมูลงาน</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="editLogId">
+          <input type="date" id="editDate" class="form-control mb-2">
+          <div class="row g-2 mb-2">
+            <div class="col-6"><input type="time" id="editStart" class="form-control"></div>
+            <div class="col-6"><input type="time" id="editEnd" class="form-control"></div>
+          </div>
+          <div class="row g-2">
+            <div class="col-6"><input type="number" id="editRate" class="form-control"></div>
+            <div class="col-6"><input type="number" id="editFund" class="form-control"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-primary w-100" onclick="saveEditWork()">บันทึกการแก้ไข</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
