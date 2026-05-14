@@ -224,12 +224,21 @@
                             
                         </div>
 
-                        <div class="card mb-2 p-2 bg-primary text-white d-flex justify-content-between flex-row">
-                            <span>รายได้รวม:</span> <span id="uTotalAll" class="fw-bold">0</span>
-                        </div>
-                        <div class="card p-2 bg-fund text-white d-flex justify-content-between flex-row">
-                            <span>กองทุนสะสม:</span> <span id="uTotalFundAll" class="fw-bold">0</span>
-                        </div>
+                        <div class="card mb-2 p-2 bg-fund text-white d-flex justify-content-between flex-row">
+    <span>กองทุนสะสม:</span> <span id="uTotalFundAll" class="fw-bold">0</span>
+</div>
+
+<div class="card mb-2 p-2 bg-primary text-white d-flex justify-content-between flex-row">
+    <span>รายได้รวมทั้งหมด:</span> <span id="uTotalAll" class="fw-bold">0</span>
+</div>
+
+<div class="card mb-2 p-2 bg-success text-white d-flex justify-content-between flex-row">
+    <span>รายได้รวมที่จ่ายแล้ว:</span> <span id="uTotalPaid" class="fw-bold">0</span>
+</div>
+
+<div class="card p-2 bg-warning text-dark d-flex justify-content-between flex-row">
+    <span>รายได้ค้างจ่ายรออนุมัติ:</span> <span id="uTotalPending" class="fw-bold">0</span>
+</div>
                     </div>
                 </div>
                 <div class="col-md-8">
@@ -703,69 +712,71 @@ function renderUserDashboard() {
     document.getElementById('uProfileImg').src =
         currentUser.photo || "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
 
-    const myLogs = workLogs.filter(l => Number(l.empId) === Number(currentUser.id));
-    const accordion = document.getElementById('monthlyAccordion');
-    accordion.innerHTML = '';
+    const myLogs = workLogs
+        .filter(l => Number(l.empId) === Number(currentUser.id))
+        .sort((a, b) => new Date(formatDateOnly(b.date)) - new Date(formatDateOnly(a.date)));
 
-    let months = {};
-    let tInc = 0;
-    let tFun = 0;
+    const listArea = document.getElementById('monthlyAccordion');
+    listArea.innerHTML = '';
 
-    myLogs.forEach(l => {
-        const m = formatDateOnly(l.date).substring(0, 7);
+    let totalAll = 0;
+    let totalFund = 0;
+    let totalPaid = 0;
+    let totalPending = 0;
 
-        if (!months[m]) months[m] = { logs: [], inc: 0, fun: 0 };
+    myLogs.forEach(log => {
+        const total = Number(log.total || 0);
+        const fund = Number(log.fund || 0);
 
-        months[m].logs.push(l);
-        months[m].inc += Number(l.total || 0);
-        months[m].fun += Number(l.fund || 0);
+        totalAll += total;
+        totalFund += fund;
 
-        tInc += Number(l.total || 0);
-        tFun += Number(l.fund || 0);
+        if (log.status === "paid") {
+            totalPaid += total;
+        } else {
+            totalPending += total;
+        }
     });
 
-    document.getElementById('uTotalAll').innerText = tInc.toLocaleString() + " ฿";
-    document.getElementById('uTotalFundAll').innerText = tFun.toLocaleString() + " ฿";
+    document.getElementById('uTotalFundAll').innerText = totalFund.toLocaleString() + " ฿";
+    document.getElementById('uTotalAll').innerText = totalAll.toLocaleString() + " ฿";
+    document.getElementById('uTotalPaid').innerText = totalPaid.toLocaleString() + " ฿";
+    document.getElementById('uTotalPending').innerText = totalPending.toLocaleString() + " ฿";
 
-    Object.keys(months).sort().reverse().forEach((m, idx) => {
-        let rows = months[m].logs.map(log => `
-            <tr>
-                <td><small>${formatDateOnly(log.date)}</small></td>
-                <td>${Number(log.hours || 0)} ชม.</td>
-                <td>${Number(log.rate || 0).toLocaleString()} ฿/ชม.</td>
-                <td>${log.status === 'paid' ? '✅' : '⏳'}</td>
-                <td class="fw-bold">${Number(log.total || 0).toLocaleString()}</td>
-            </tr>`).join('');
+    const rows = myLogs.map(log => `
+        <tr>
+            <td><small>${formatDateOnly(log.date)}</small></td>
+            <td>${Number(log.hours || 0)} ชม.</td>
+            <td>${Number(log.rate || 0).toLocaleString()} ฿/ชม.</td>
+            <td>${log.status === 'paid' ? '✅ จ่ายแล้ว' : '⏳ รออนุมัติ'}</td>
+            <td class="fw-bold">${Number(log.total || 0).toLocaleString()} ฿</td>
+        </tr>
+    `).join('');
 
-        accordion.innerHTML += `
-            <div class="accordion-item mb-2 shadow-sm rounded overflow-hidden border-0">
-                <h2 class="accordion-header">
-                    <button class="accordion-button ${idx === 0 ? '' : 'collapsed'} py-2" type="button" data-bs-toggle="collapse" data-bs-target="#c${m.replace('-', '')}">
-                        <div class="d-flex justify-content-between w-100 align-items-center me-3 small">
-                            <span class="fw-bold">${m}</span>
-                            <span>รายได้: <span class="text-primary fw-bold">${months[m].inc.toLocaleString()} ฿</span></span>
-                        </div>
-                    </button>
-                </h2>
+    listArea.innerHTML = `
+        <div class="card p-3">
+            <h5 class="fw-bold mb-3">
+                <i class="bi bi-list-ul"></i> รายการทั้งหมด
+            </h5>
 
-                <div id="c${m.replace('-', '')}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}" data-bs-parent="#monthlyAccordion">
-                    <div class="accordion-body p-0 small">
-                        <table class="table table-sm mb-0 text-center">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>วันที่</th>
-                                    <th>ชั่วโมง</th>
-                                    <th>เรท/ชม.</th>
-                                    <th>สถานะ</th>
-                                    <th>เงิน</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>`;
-    });
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered text-center align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>วันที่</th>
+                            <th>ชั่วโมง</th>
+                            <th>เรท/ชม.</th>
+                            <th>สถานะ</th>
+                            <th>เงิน</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows || `<tr><td colspan="5" class="text-muted">ยังไม่มีรายการ</td></tr>`}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
 }
 </script>
 </body>
