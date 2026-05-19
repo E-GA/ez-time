@@ -161,6 +161,66 @@ function logout() {
   location.reload();
 }
 
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = () => reject(new Error("อ่านไฟล์รูปไม่สำเร็จ"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function resizeProfileImage(dataUrl, maxSize = 900, quality = 0.84) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+
+    img.onerror = () => reject(new Error("ไฟล์นี้ไม่ใช่รูปภาพที่อ่านได้"));
+    img.src = dataUrl;
+  });
+}
+
+function getDataUrlMimeType(dataUrl) {
+  const match = String(dataUrl).match(/^data:(.*?);base64,/);
+  return match ? match[1] : "image/jpeg";
+}
+
+function getDriveFileId(url) {
+  const text = String(url || "");
+  const queryMatch = text.match(/[?&]id=([^&]+)/);
+  const pathMatch = text.match(/\/d\/([^/]+)/);
+  const id = queryMatch ? queryMatch[1] : pathMatch ? pathMatch[1] : "";
+
+  return id ? decodeURIComponent(id) : "";
+}
+
+function normalizePhotoUrl(url) {
+  const fileId = getDriveFileId(url);
+  if (!fileId) return url;
+
+  return "https://drive.google.com/thumbnail?id=" + encodeURIComponent(fileId) + "&sz=w320";
+}
+
 async function uploadPhoto(input) {
 
   if (!currentUser) {
@@ -172,77 +232,69 @@ async function uploadPhoto(input) {
 
   const file = input.files[0];
 
-  // จำกัดขนาดรูป
-  if (file.size > 2 * 1024 * 1024) {
-    alert("รูปใหญ่เกินไป (ไม่เกิน 2MB)");
+  if (!file.type.startsWith("image/")) {
+    alert("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
     return;
   }
 
-  const reader = new FileReader();
+  if (file.size > 8 * 1024 * 1024) {
+    alert("รูปใหญ่เกินไป กรุณาเลือกรูปไม่เกิน 8MB");
+    input.value = "";
+    return;
+  }
 
-  reader.onload = function(e) {
+  input.disabled = true;
 
-    const imgData = e.target.result;
+  try {
+    const originalDataUrl = await readFileAsDataURL(file);
+    const imgData = await resizeProfileImage(originalDataUrl);
+    const base64 = imgData.split(",")[1];
+    const mimeType = getDataUrlMimeType(imgData);
+    const previousPhoto = currentUser.photo || "";
 
-    // แสดงรูปทันที
     document.getElementById("uProfileImg").src = imgData;
 
-    // แปลงเป็น Base64
-    const base64 = imgData.split(",")[1];
-
-    // ใช้ FormData แทน
-    const form = new FormData();
-
-    form.append("data", JSON.stringify({
-      action: "uploadPhoto",
-      empId: currentUser.id,
-      fileName: "emp_" + currentUser.id + ".png",
-      mimeType: file.type,
-      base64: base64
-    }));
-
-    fetch(SCRIPT_URL, {
+    await fetch(SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
       body: JSON.stringify({
         action: "uploadPhoto",
         empId: currentUser.id,
-        fileName: "emp_" + currentUser.id + ".png",
-        mimeType: file.type,
+        fileName: "emp_" + currentUser.id + ".jpg",
+        mimeType: mimeType,
         base64: base64
       })
-    })
-    .then(() => {
-
-      alert("อัปโหลดรูปแล้ว กรุณารอ 3-5 วินาที แล้วเข้าสู่ระบบใหม่");
-
-      // โหลดข้อมูลใหม่
-      setTimeout(async () => {
-
-        await fetchAllData();
-
-        currentUser = employees.find(e =>
-          Number(e.id) === Number(currentUser.id)
-        );
-
-        if (currentUser && currentUser.photo) {
-          document.getElementById("uProfileImg").src =
-            currentUser.photo;
-        }
-
-      }, 4000);
-
-    })
-    .catch(err => {
-
-      console.error(err);
-      alert("อัปโหลดรูปไม่สำเร็จ");
-
     });
 
-  };
+    for (let i = 0; i < 4; i++) {
+      await wait(1500);
+      try {
+        await fetchAllData();
+      } catch (err) {
+        console.warn("รีเฟรชข้อมูลรูปยังไม่สำเร็จ:", err);
+      }
 
-  reader.readAsDataURL(file);
+      const updatedUser = employees.find(e => Number(e.id) === Number(currentUser.id));
+      const updatedPhoto = updatedUser ? updatedUser.photo || "" : "";
+
+      if (updatedPhoto && updatedPhoto !== previousPhoto) {
+        currentUser = updatedUser;
+        document.getElementById("uProfileImg").src = normalizePhotoUrl(updatedPhoto);
+        alert("อัปโหลดรูปโปรไฟล์สำเร็จ");
+        return;
+      }
+    }
+
+    alert("ส่งรูปแล้ว แต่ยังไม่พบลิงก์รูปในระบบ กรุณาลองรีเฟรชหรือเข้าสู่ระบบใหม่อีกครั้ง");
+
+  } catch (err) {
+    console.error(err);
+    alert("อัปโหลดรูปไม่สำเร็จ: " + err.message);
+
+  } finally {
+    input.disabled = false;
+    input.value = "";
+  }
 }
 async function updateUserAccount() {
   const newBank = document.getElementById("uInputBank").value;
@@ -513,7 +565,9 @@ function renderUserDashboard() {
   document.getElementById("uInputBank").value = currentUser.bank || "";
   document.getElementById("uInputAcc").value = currentUser.acc || "";
   document.getElementById("uProfileImg").src =
-    currentUser.photo || "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
+    currentUser.photo
+      ? normalizePhotoUrl(currentUser.photo)
+      : "https://img5.pic.in.th/file/secure-sv1/user-placeholder.png";
 
   const myLogs = workLogs
     .filter(l => Number(l.empId) === Number(currentUser.id))
