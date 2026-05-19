@@ -327,8 +327,10 @@ function renderAdminDashboard() {
         </td>
         <td>${Number(log.hours || 0)} ชม.</td>
         <td class="fw-bold">${Number(log.total || 0).toLocaleString()}</td>
-        <td class="${log.status === "paid" ? "status-paid" : "status-pending"}">
-          ${log.status === "paid" ? "จ่ายแล้ว" : "รอ"}
+        <td>
+          <span class="status-badge ${log.status === "paid" ? "status-badge-paid" : "status-badge-pending"}">
+            ${log.status === "paid" ? "จ่ายแล้ว" : "รอ"}
+          </span>
         </td>
         <td>
           <i class="bi bi-check-circle-fill text-success me-2 fs-5" style="cursor:pointer" onclick="togglePay(${log.id})"></i>
@@ -552,7 +554,11 @@ function renderUserDashboard() {
         <td><small>${formatDateOnly(log.date)}</small></td>
         <td>${Number(log.hours || 0)} ชม.</td>
         <td>${Number(log.rate || 0).toLocaleString()} ฿/ชม.</td>
-        <td>${log.status === "paid" ? "✅ จ่ายแล้ว" : "⏳ รออนุมัติ"}</td>
+        <td>
+          <span class="status-badge ${log.status === "paid" ? "status-badge-paid" : "status-badge-pending"}">
+            ${log.status === "paid" ? "จ่ายแล้ว" : "รออนุมัติ"}
+          </span>
+        </td>
         <td class="fw-bold">${Number(log.total || 0).toLocaleString()} ฿</td>
       </tr>
     `).join("");
@@ -560,7 +566,7 @@ function renderUserDashboard() {
 
   const makeTable = (logs) => `
     <div class="table-responsive">
-      <table class="table table-sm table-bordered text-center align-middle">
+      <table class="table table-sm text-center align-middle user-work-table">
         <thead class="table-light">
           <tr>
             <th>วันที่</th>
@@ -576,7 +582,7 @@ function renderUserDashboard() {
   `;
 
   document.getElementById("monthlyAccordion").innerHTML = `
-    <div class="card p-3">
+    <div class="card p-3 table-card">
       <h5 class="fw-bold mb-3">
         <i class="bi bi-list-ul"></i> รายการงานของฉัน
       </h5>
