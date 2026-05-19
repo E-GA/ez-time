@@ -4,27 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>E-GA.working</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <nav id="mainNav" class="navbar navbar-expand-lg navbar-dark bg-dark hidden">
+  <nav id="mainNav" class="navbar navbar-expand-lg app-navbar hidden">
     <div class="container">
       <a class="navbar-brand fw-bold" href="#">E-GA.working</a>
       <button class="btn btn-outline-light btn-sm" onclick="logout()">ออกจากระบบ</button>
     </div>
   </nav>
 
-  <div class="container mt-4">
-    <div id="loginPage" class="mx-auto" style="max-width: 400px; margin-top: 50px;">
+  <div class="container app-container">
+    <div id="loginPage" class="login-shell mx-auto">
       <div class="card p-4 text-center border-top border-primary border-4 mb-4 login-card">
         <div class="logo-wrapper">
           <img src="e-galogo.png" alt="E-GA Logo" class="logo-img">
         </div>
 
-        <h2 class="mb-1 fw-bold text-primary">E-GA.working</h2>
+        <h2 class="mb-1 fw-bold text-primary brand-title">E-GA.working</h2>
         <p class="text-muted small mb-4">สำหรับเช็คเวลาการมาช่วยงานต่างๆ</p>
 
         <div class="mb-3">
@@ -40,16 +43,24 @@
         </button>
       </div>
 
-      <div class="card p-3 announcement-box shadow-sm">
+      <div class="card p-3 announcement-box">
         <h6 class="fw-bold text-warning mb-2"><i class="bi bi-megaphone-fill"></i> แผนการทำงานครั้งถัดไป</h6>
         <div id="loginPlanList" class="small text-muted"></div>
       </div>
     </div>
 
     <div id="adminPage" class="hidden">
+      <div class="dashboard-header mb-3">
+        <div>
+          <p class="eyebrow mb-1">ผู้ดูแลระบบ</p>
+          <h3 class="mb-0 fw-bold">จัดการชั่วโมงงาน</h3>
+        </div>
+        <span class="soft-pill"><i class="bi bi-shield-check"></i> Admin</span>
+      </div>
+
       <div class="row">
         <div class="col-md-4">
-          <div class="card p-3 mb-3 border-start border-primary border-4">
+          <div class="card p-3 mb-3 border-start border-primary border-4 control-panel">
             <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-gear-fill"></i> จัดการระบบ</h5>
 
             <ul class="nav nav-tabs mb-3">
@@ -70,7 +81,7 @@
                   <div class="col-6"><input type="number" id="entryRate" class="form-control" placeholder="เรท/ชม."></div>
                   <div class="col-6"><input type="number" id="entryFund" class="form-control" placeholder="หักกองทุน"></div>
                 </div>
-                <button class="btn btn-success w-100" onclick="addWorkLog()">บันทึกงาน</button>
+                <button class="btn btn-success w-100" onclick="addWorkLog()"><i class="bi bi-plus-circle"></i> บันทึกงาน</button>
               </div>
 
               <div class="tab-pane fade" id="tab-emp">
@@ -86,25 +97,25 @@
                   <option value="ttb">ttb (ทหารไทยธนชาต)</option>
                 </select>
                 <input type="text" id="empAcc" class="form-control mb-3" placeholder="เลขบัญชี">
-                <button class="btn btn-primary w-100" onclick="addEmployee()">บันทึกพนักงาน</button>
+                <button class="btn btn-primary w-100" onclick="addEmployee()"><i class="bi bi-person-plus"></i> บันทึกพนักงาน</button>
               </div>
 
               <div class="tab-pane fade" id="tab-plan">
                 <textarea id="planText" class="form-control mb-2" rows="2" placeholder="เพิ่มแผนงานใหม่..."></textarea>
-                <button class="btn btn-warning btn-sm w-100" onclick="addWorkPlan()">ประกาศแผนงาน</button>
+                <button class="btn btn-warning btn-sm w-100" onclick="addWorkPlan()"><i class="bi bi-megaphone"></i> ประกาศแผนงาน</button>
                 <hr>
                 <div id="adminPlanList"></div>
               </div>
             </div>
           </div>
 
-          <div class="card p-3">
+          <div class="card p-3 people-panel">
             <div id="adminEmpList" class="small"></div>
           </div>
         </div>
 
         <div class="col-md-8">
-          <div class="card p-3">
+          <div class="card p-3 table-card">
             <h5 class="fw-bold mb-3"><i class="bi bi-table"></i> ประวัติงานและข้อมูลการโอนเงิน</h5>
             <div class="table-responsive">
               <table class="table table-sm small">
@@ -127,9 +138,17 @@
     </div>
 
     <div id="userPage" class="hidden">
+      <div class="dashboard-header mb-3">
+        <div>
+          <p class="eyebrow mb-1">บัญชีของฉัน</p>
+          <h3 class="mb-0 fw-bold">สรุปชั่วโมงงาน</h3>
+        </div>
+        <span class="soft-pill"><i class="bi bi-clock-history"></i> Working</span>
+      </div>
+
       <div class="row">
         <div class="col-md-4">
-          <div class="card p-3 mb-3 border-top border-primary border-4 text-center">
+          <div class="card p-3 mb-3 border-top border-primary border-4 text-center profile-card">
             <div class="profile-wrapper mb-3" onclick="document.getElementById('profileInput').click()">
               <img id="uProfileImg" src="https://via.placeholder.com/110" class="profile-img">
               <div class="btn-change-photo"><i class="bi bi-camera-fill"></i></div>
@@ -153,23 +172,23 @@
 
               <div class="input-group mb-2">
                 <input type="text" id="uInputAcc" class="form-control form-control-sm border-primary shadow-none" placeholder="เลขบัญชี">
-                <button class="btn btn-primary btn-sm" onclick="updateUserAccount()">บันทึก</button>
+                <button class="btn btn-primary btn-sm" onclick="updateUserAccount()"><i class="bi bi-check2"></i> บันทึก</button>
               </div>
             </div>
 
-            <div class="card mb-2 p-2 bg-fund text-white d-flex justify-content-between flex-row summary-card">
+            <div class="mb-2 p-2 d-flex justify-content-between flex-row summary-card summary-tile summary-fund">
               <span>กองทุนสะสม:</span> <span id="uTotalFundAll" class="fw-bold">0</span>
             </div>
 
-            <div class="card mb-2 p-2 bg-primary text-white d-flex justify-content-between flex-row summary-card">
+            <div class="mb-2 p-2 d-flex justify-content-between flex-row summary-card summary-tile summary-total">
               <span>รายได้รวมทั้งหมด:</span> <span id="uTotalAll" class="fw-bold">0</span>
             </div>
 
-            <div class="card mb-2 p-2 bg-success text-white d-flex justify-content-between flex-row summary-card">
+            <div class="mb-2 p-2 d-flex justify-content-between flex-row summary-card summary-tile summary-paid">
               <span>รายได้รวมที่จ่ายแล้ว:</span> <span id="uTotalPaid" class="fw-bold">0</span>
             </div>
 
-            <div class="card p-2 bg-warning text-dark d-flex justify-content-between flex-row summary-card">
+            <div class="p-2 d-flex justify-content-between flex-row summary-card summary-tile summary-pending">
               <span>รายได้ค้างจ่ายรออนุมัติ:</span> <span id="uTotalPending" class="fw-bold">0</span>
             </div>
           </div>
@@ -204,7 +223,7 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-primary w-100" onclick="saveEditWork()">บันทึกการแก้ไข</button>
+          <button class="btn btn-primary w-100" onclick="saveEditWork()"><i class="bi bi-save2"></i> บันทึกการแก้ไข</button>
         </div>
       </div>
     </div>
