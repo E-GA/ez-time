@@ -364,6 +364,8 @@ async function editEmployeeAdmin(id) {
 }
 
 function renderAdminDashboard() {
+  renderAdminPendingSummary();
+
   const tbody = document.getElementById("adminReportBody");
   tbody.innerHTML = "";
 
@@ -391,6 +393,74 @@ function renderAdminDashboard() {
         </td>
       </tr>`;
   });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderAdminPendingSummary() {
+  const totalEl = document.getElementById("adminPendingTotal");
+  const peopleEl = document.getElementById("adminPendingPeople");
+
+  if (!totalEl || !peopleEl) return;
+
+  const pendingByEmp = new Map();
+  let pendingTotal = 0;
+
+  workLogs
+    .filter(log => log.status !== "paid")
+    .forEach(log => {
+      const empId = Number(log.empId);
+      const amount = Number(log.total || 0) || 0;
+      const current = pendingByEmp.get(empId) || {
+        empId,
+        amount: 0,
+        count: 0
+      };
+
+      current.amount += amount;
+      current.count += 1;
+      pendingByEmp.set(empId, current);
+      pendingTotal += amount;
+    });
+
+  totalEl.innerText = pendingTotal.toLocaleString() + " ฿";
+
+  const rows = [...pendingByEmp.values()]
+    .filter(item => item.amount !== 0 || item.count > 0)
+    .sort((a, b) => b.amount - a.amount);
+
+  if (!rows.length) {
+    peopleEl.innerHTML = `
+      <div class="admin-empty-summary">
+        <i class="bi bi-check2-circle"></i>
+        <span>ไม่มีรายการรอจ่าย</span>
+      </div>`;
+    return;
+  }
+
+  peopleEl.innerHTML = rows.map(item => {
+    const emp = employees.find(e => Number(e.id) === Number(item.empId));
+    const name = emp ? emp.name : "ไม่พบชื่อพนักงาน";
+    const bankText = emp && (emp.bank || emp.acc)
+      ? `${emp.bank || "-"} ${emp.acc || ""}`.trim()
+      : "-";
+
+    return `
+      <div class="admin-pending-row">
+        <div>
+          <div class="admin-pending-name">${escapeHtml(name)}</div>
+          <div class="admin-pending-meta">${escapeHtml(bankText)} | ${item.count} รายการ</div>
+        </div>
+        <strong>${item.amount.toLocaleString()} ฿</strong>
+      </div>`;
+  }).join("");
 }
 
 function renderPublicPlans() {
