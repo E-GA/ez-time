@@ -115,6 +115,20 @@
         </div>
 
         <div class="col-md-8">
+          <div class="card p-3 mb-3 admin-summary-card">
+            <div class="admin-summary-head">
+              <div>
+                <h5 class="fw-bold mb-1"><i class="bi bi-cash-coin"></i> สรุปยอดรอจ่าย</h5>
+                <p class="small text-muted mb-0">ยอดรวมรายการที่ยังไม่ได้จ่าย แยกตามพนักงาน</p>
+              </div>
+              <div class="pending-total-box">
+                <span>รวมรอจ่ายทั้งหมด</span>
+                <strong id="adminPendingTotal">0 ฿</strong>
+              </div>
+            </div>
+            <div id="adminPendingPeople" class="admin-pending-list mt-3"></div>
+          </div>
+
           <div class="card p-3 table-card">
             <h5 class="fw-bold mb-3"><i class="bi bi-table"></i> ประวัติงานและข้อมูลการโอนเงิน</h5>
             <div class="table-responsive">
