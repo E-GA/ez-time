@@ -268,6 +268,79 @@ body {
   color: #92400e;
 }
 
+.admin-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.pending-total-box {
+  min-width: 184px;
+  padding: 10px 12px;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  background: var(--pending-soft);
+  color: #92400e;
+  text-align: right;
+}
+
+.pending-total-box span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.pending-total-box strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.admin-pending-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-pending-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-color);
+  border-left: 4px solid var(--pending-color);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.admin-pending-name {
+  font-weight: 800;
+}
+
+.admin-pending-meta {
+  color: var(--muted-color);
+  font-size: 12px;
+}
+
+.admin-pending-row strong {
+  color: #92400e;
+  white-space: nowrap;
+}
+
+.admin-empty-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed #bbf7d0;
+  border-radius: 8px;
+  background: var(--paid-soft);
+  color: #166534;
+  font-weight: 700;
+}
+
 .btn {
   border-radius: 8px;
   font-weight: 700;
@@ -295,6 +368,7 @@ body {
 
 .control-panel,
 .people-panel,
+.admin-summary-card,
 .table-card,
 .profile-card {
   border-top-color: rgba(37,99,235,0.16);
@@ -360,6 +434,21 @@ body {
 
   .soft-pill {
     padding: 6px 10px;
+  }
+
+  .admin-summary-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pending-total-box {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .admin-pending-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .logo-img {
